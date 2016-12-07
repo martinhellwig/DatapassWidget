@@ -1,68 +1,60 @@
 package de.schooltec.datapass.database;
 
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpVersion;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.conn.ClientConnectionManager;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.params.HttpProtocolParams;
-import org.apache.http.protocol.HTTP;
-
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.ArrayList;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 
 /**
  * Created by Martin on 30.07.2015.
  */
 public class ServerConnection {
 
-    public static DefaultHttpClient getNewHttpClient() {
-        try {
-            HttpParams params = new BasicHttpParams();
-            HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
-            HttpProtocolParams.setContentCharset(params, HTTP.UTF_8);
+    private static InputStream getInputStream(String urlStr) throws IOException, KeyManagementException, NoSuchAlgorithmException {
+        URL url = new URL(urlStr);
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
-            SchemeRegistry registry = new SchemeRegistry();
-            registry.register(new Scheme("http", PlainSocketFactory.getSocketFactory(), 80));
+        // Create the SSL connection (Only used for HTTPSURLConnection)
+        /*SSLContext sc;
+        sc = SSLContext.getInstance("TLS");
+        sc.init(null, null, new java.security.SecureRandom());
+        conn.setSSLSocketFactory(sc.getSocketFactory());*/
 
-            ClientConnectionManager ccm = new ThreadSafeClientConnManager(params, registry);
+        // set Timeout and method
+        conn.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 5.1; rv:19.0) Gecko/20100101 Firefox/19.0");
+        conn.setReadTimeout(7000);
+        conn.setConnectTimeout(7000);
+        conn.setRequestMethod("POST");
+        conn.setDoInput(true);
+        conn.setDoOutput(true);
 
-            return new DefaultHttpClient(ccm, params);
-        } catch (Exception e) {
-            return new DefaultHttpClient();
-        }
+        // Add any data you wish to post here
+        OutputStream os = conn.getOutputStream();
+        BufferedWriter writer = new BufferedWriter(
+                new OutputStreamWriter(os, "UTF-8"));
+        writer.flush();
+        writer.close();
+        os.close();
+
+        conn.connect();
+        return conn.getInputStream();
     }
 
     public String getStringFromUrl(String url) throws Exception {
-        DefaultHttpClient httpClient = getNewHttpClient();
-        HttpPost httpPost = new HttpPost(url);
-        httpPost.setEntity(new UrlEncodedFormEntity(new ArrayList<NameValuePair>()));
-        httpPost.setHeader("User-Agent", "Mozilla/5.0 (Windows NT 5.1; rv:19.0) Gecko/20100101 Firefox/19.0");
-
-        StringBuilder stringBuilder = new StringBuilder();
-        HttpResponse response = httpClient.execute(httpPost);
-        int statusCode = response.getStatusLine().getStatusCode();
-        if (statusCode == 200) {
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(response.getEntity().getContent()));
-
-            String line;
-            while ((line = reader.readLine()) != null) {
-                stringBuilder.append(line);
-            }
-            return stringBuilder.toString();
-
-        } else {
-            throw new Exception();
+        String result = new String();
+        InputStream is = getInputStream(url);
+        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+        String inputLine;
+        while ((inputLine = in.readLine()) != null) {
+            result += inputLine;
         }
+        return result;
     }
 }

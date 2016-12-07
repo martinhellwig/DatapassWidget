@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 public class HTTPFunctions {
 
     private ServerConnection serverConnection;
-    private final static String URL = "http://www.datapass.de/";
+    private final static String URL = "http://datapass.de/";
 
     private String actualAmount;
     private String maxAmount;
