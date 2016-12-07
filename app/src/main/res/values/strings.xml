@@ -1,0 +1,15 @@
+<resources>
+    <string name="app_name">Datapass</string>
+    <string name="update_fail">Error while updating usage data</string>
+    <string name="update_fail_wifi">Can`t update data while connected via WiFi</string>
+    <string name="update_successful">Successfully updated</string>
+
+    <string name="nodata_usage_actual">000,00 MB</string>
+    <string name="nodata_usage_max">000,00 MB</string>
+    <string name="nodata_updatetime">01.01, 00:00</string>
+    <string name="preference_file_key">main_preference</string>
+    <string name="saved_actualAmount">actualAmount</string>
+    <string name="saved_maxAmount">maxAmount</string>
+    <string name="saved_alreadyUsed">alreadyUsed</string>
+    <string name="saved_lastUpdate">lastUpdate</string>
+</resources>

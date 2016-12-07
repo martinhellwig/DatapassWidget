@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="update_fail">Fehler beim Aktualisieren der Nutzungsdaten</string>
+    <string name="update_fail_wifi">Keine Aktualisierung möglich während WiFi-Verbindung</string>
+    <string name="update_successful">Erfolgreich aktualisiert</string>
+</resources>
