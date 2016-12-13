@@ -15,31 +15,27 @@ import de.schooltec.datapass.database.HTTPFunctions;
 public class ButtonWidget extends AppWidgetProvider {
 
 	private CommunicateWithServerTask mTask = null;
-    private boolean receivedStatus;
-	private Context context;
+    private Context context;
 
     private String actualAmount;
     private String maxAmount;
     private float alreadyUsed;
     private String lastUpdate;
 	
-	public void onUpdate(Context context, AppWidgetManager appWidgetManager,
-            int[] appWidgetIds) {
+	public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds) {
 		
 		this.context = context;
 
         mTask = new CommunicateWithServerTask();
         mTask.execute((Void) null);
         
-		RemoteViews remoteViews = null;
+		RemoteViews remoteViews;
 		
 		// initializing widget layout
- 		remoteViews = new RemoteViews(context.getPackageName(),
-            R.layout.widget_layout);
+ 		remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
  		
  		// register for button event
- 		remoteViews.setOnClickPendingIntent(R.id.mainLayout,
-            buildButtonPendingIntent(context));
+ 		remoteViews.setOnClickPendingIntent(R.id.mainLayout, buildButtonPendingIntent(context));
 		
         // request for widget update
         pushWidgetUpdate(context, remoteViews);
@@ -48,13 +44,11 @@ public class ButtonWidget extends AppWidgetProvider {
 	public static PendingIntent buildButtonPendingIntent(Context context) { 
         // initiate widget update request
         Intent intent = new Intent(context, WidgetIntentReceiver.class);
-        return PendingIntent.getBroadcast(context, 0, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
+        return PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
     }
 	
 	public static void pushWidgetUpdate(Context context, RemoteViews remoteViews) {
-        ComponentName myWidget = new ComponentName(context,
-                ButtonWidget.class);
+        ComponentName myWidget = new ComponentName(context, ButtonWidget.class);
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         manager.updateAppWidget(myWidget, remoteViews);
     }
@@ -68,9 +62,7 @@ public class ButtonWidget extends AppWidgetProvider {
            //Do here cool stuff
    		   HTTPFunctions userFunction = new HTTPFunctions();
            try {
-               receivedStatus = userFunction.getPageAndParse();
-
-               if(receivedStatus) {
+               if(userFunction.getPageAndParse()) {
                    actualAmount = userFunction.getActualAmount();
                    maxAmount = userFunction.getMaxAmount();
                    alreadyUsed = userFunction.getAlreadyUsed();
@@ -84,7 +76,7 @@ public class ButtonWidget extends AppWidgetProvider {
                    editor.putString(context.getString(R.string.saved_maxAmount), maxAmount);
                    editor.putFloat(context.getString(R.string.saved_alreadyUsed), alreadyUsed);
                    editor.putString(context.getString(R.string.saved_lastUpdate), lastUpdate);
-                   editor.commit();
+                   editor.apply();
                    return true;
                }
                else return false;

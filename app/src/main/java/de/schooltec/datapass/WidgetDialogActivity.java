@@ -21,7 +21,6 @@ import de.schooltec.datapass.database.HTTPFunctions;
 public class WidgetDialogActivity extends Activity {
 
 	private CommunicateWithServerTask mTask = null;
-	private boolean receivedStatus;
 	private Context context;
 
 	private String actualAmount;
@@ -50,7 +49,7 @@ public class WidgetDialogActivity extends Activity {
         	//Do here cool stuff
     		HTTPFunctions userFunction = new HTTPFunctions();
     		try {
-    			receivedStatus = userFunction.getPageAndParse();
+				boolean receivedStatus = userFunction.getPageAndParse();
 
     	      	if(receivedStatus) {
 					actualAmount = userFunction.getActualAmount();
@@ -66,7 +65,7 @@ public class WidgetDialogActivity extends Activity {
 					editor.putString(getString(R.string.saved_maxAmount), maxAmount);
 					editor.putFloat(getString(R.string.saved_alreadyUsed), alreadyUsed);
 					editor.putString(getString(R.string.saved_lastUpdate), lastUpdate);
-					editor.commit();
+					editor.apply();
 					return true;
 				}
     	      	else return false;

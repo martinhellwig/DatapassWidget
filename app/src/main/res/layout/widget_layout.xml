@@ -1,66 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="wrap_content"
-    android:layout_gravity="center"
-    android:orientation="vertical"
-    android:weightSum="3"
-    android:clickable="true"
-    android:id="@+id/mainLayout">
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mainLayout"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
+    <!-- Progress Bar -->
+    <ImageView
+        android:id="@+id/imageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
 
-    <RelativeLayout
-        android:layout_width="fill_parent"
-        android:layout_height="fill_parent" >
+    <!-- Text -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical">
 
-        <!-- Bottom layer -->
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentTop="true">
+        <TextView
+            android:id="@+id/textViewAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:text="---Mb /\n ---Mb"
+            android:textColor="@android:color/secondary_text_light"
+            android:textSize="13sp"
+            android:textStyle="bold"/>
 
-            <ImageView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:id="@+id/imageView"
-                android:layout_gravity="center_horizontal" />
-        </LinearLayout>
-
-        <!-- Top layer -->
-        <LinearLayout
-            android:layout_width="fill_parent"
-            android:layout_height="fill_parent"
-            android:orientation="vertical"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentTop="true">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="---Mb /\n ---Mb"
-                android:textStyle="bold"
-                android:textColor="@android:color/secondary_text_light"
-                android:id="@+id/textViewAmount"
-                android:layout_gravity="center_horizontal"
-                android:textSize="13dp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=""
-                android:layout_gravity="center_horizontal"
-                android:textSize="10dp"/>
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="01.01, 00:00"
-                android:textStyle="bold"
-                android:textColor="@android:color/secondary_text_light"
-                android:id="@+id/textViewDate"
-                android:layout_gravity="center_horizontal"
-                android:textSize="12dp"/>
-        </LinearLayout>
-    </RelativeLayout>
-</LinearLayout>
+        <TextView
+            android:id="@+id/textViewDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="10dp"
+            android:text="01.01, 00:00"
+            android:textColor="@android:color/secondary_text_light"
+            android:textSize="12sp"
+            android:textStyle="bold"/>
+    </LinearLayout>
+</RelativeLayout>

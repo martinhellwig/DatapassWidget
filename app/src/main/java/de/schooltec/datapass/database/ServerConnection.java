@@ -12,10 +12,7 @@ import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
-/**
- * Created by Martin on 30.07.2015.
- */
-public class ServerConnection {
+class ServerConnection {
 
     private static InputStream getInputStream(String urlStr) throws IOException, KeyManagementException, NoSuchAlgorithmException {
         URL url = new URL(urlStr);
@@ -47,10 +44,9 @@ public class ServerConnection {
         return conn.getInputStream();
     }
 
-    public String getStringFromUrl(String url) throws Exception {
-        String result = new String();
-        InputStream is = getInputStream(url);
-        BufferedReader in = new BufferedReader(new InputStreamReader(is));
+    String getStringFromUrl(String url) throws Exception {
+        String result = "";
+        BufferedReader in = new BufferedReader(new InputStreamReader(getInputStream(url)));
         String inputLine;
         while ((inputLine = in.readLine()) != null) {
             result += inputLine;

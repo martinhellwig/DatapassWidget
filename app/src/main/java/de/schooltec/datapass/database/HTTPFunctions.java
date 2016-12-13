@@ -2,12 +2,10 @@ package de.schooltec.datapass.database;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/**
- * Created by Martin on 30.07.2015.
- */
 public class HTTPFunctions {
 
     private ServerConnection serverConnection;
@@ -68,10 +66,10 @@ public class HTTPFunctions {
                 time = matcher.group(1);
             }
             time = time.replace(" um ", ",");
-            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy,HH:mm");
+            SimpleDateFormat format = new SimpleDateFormat("dd.MM.yyyy,HH:mm", Locale.GERMAN);
             Date updateDate = format.parse(time);
-            SimpleDateFormat outFormatDay = new SimpleDateFormat("dd.MM");
-            SimpleDateFormat outFormatHour = new SimpleDateFormat("HH:mm");
+            SimpleDateFormat outFormatDay = new SimpleDateFormat("dd.MM", Locale.GERMAN);
+            SimpleDateFormat outFormatHour = new SimpleDateFormat("HH:mm", Locale.GERMAN);
             lastUpdate = outFormatDay.format(updateDate) + ", " + outFormatHour.format(updateDate);
 
             return true;
