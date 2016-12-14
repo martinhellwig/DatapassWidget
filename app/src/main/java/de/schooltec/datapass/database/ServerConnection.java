@@ -12,9 +12,11 @@ import java.net.URL;
 import java.security.KeyManagementException;
 import java.security.NoSuchAlgorithmException;
 
-class ServerConnection {
-
-    private static InputStream getInputStream(String urlStr) throws IOException, KeyManagementException, NoSuchAlgorithmException {
+class ServerConnection
+{
+    private static InputStream getInputStream(String urlStr)
+            throws IOException, KeyManagementException, NoSuchAlgorithmException
+    {
         URL url = new URL(urlStr);
         HttpURLConnection conn = (HttpURLConnection) url.openConnection();
 
@@ -34,8 +36,7 @@ class ServerConnection {
 
         // Add any data you wish to post here
         OutputStream os = conn.getOutputStream();
-        BufferedWriter writer = new BufferedWriter(
-                new OutputStreamWriter(os, "UTF-8"));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(os, "UTF-8"));
         writer.flush();
         writer.close();
         os.close();
@@ -44,11 +45,13 @@ class ServerConnection {
         return conn.getInputStream();
     }
 
-    String getStringFromUrl(String url) throws Exception {
+    String getStringFromUrl(String url) throws Exception
+    {
         String result = "";
         BufferedReader in = new BufferedReader(new InputStreamReader(getInputStream(url)));
         String inputLine;
-        while ((inputLine = in.readLine()) != null) {
+        while ((inputLine = in.readLine()) != null)
+        {
             result += inputLine;
         }
         return result;

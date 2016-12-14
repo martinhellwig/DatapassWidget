@@ -6,8 +6,8 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class HTTPFunctions {
-
+public class HTTPFunctions
+{
     private ServerConnection serverConnection;
     private final static String URL = "http://datapass.de/";
 
@@ -16,12 +16,15 @@ public class HTTPFunctions {
     private float alreadyUsed;
     private String lastUpdate;
 
-    private void createServerConnection() {
+    private void createServerConnection()
+    {
         serverConnection = new ServerConnection();
     }
 
-    public boolean getPageAndParse() {
-        try {
+    public boolean getPageAndParse()
+    {
+        try
+        {
             createServerConnection();
             String htmlContent = serverConnection.getStringFromUrl(URL);
 
@@ -30,29 +33,42 @@ public class HTTPFunctions {
             Matcher matcher = pattern.matcher(htmlContent);
 
             int i = 0;
-            while (matcher.find()) {
-                if(i == 0) actualAmount = matcher.group(1);
-                if(i == 1) maxAmount = matcher.group(1);
+            while (matcher.find())
+            {
+                if (i == 0) actualAmount = matcher.group(1);
+                if (i == 1) maxAmount = matcher.group(1);
                 i++;
             }
 
-            float numberActual = Float.parseFloat(actualAmount.substring(0, actualAmount.length()-3).replace(",", "."));
-            float numberMax = Float.parseFloat(maxAmount.substring(0, maxAmount.length()-3).replace(",", "."));
+            float numberActual = Float
+                    .parseFloat(actualAmount.substring(0, actualAmount.length() - 3).replace(",", "."));
+            float numberMax = Float.parseFloat(maxAmount.substring(0, maxAmount.length() - 3).replace(",", "."));
 
-            if(actualAmount.contains("KB")) {
+            if (actualAmount.contains("KB"))
+            {
                 alreadyUsed = 0f;
             }
-            else {
-                if (actualAmount.contains("GB")) {
-                    if (maxAmount.contains("GB")) {
+            else
+            {
+                if (actualAmount.contains("GB"))
+                {
+                    if (maxAmount.contains("GB"))
+                    {
                         alreadyUsed = numberActual / numberMax;
-                    } else { //We assume the amount is in MB (but this can't be possible, because then the maxAMount would be less than the actualAmount)
+                    }
+                    else
+                    { //We assume the amount is in MB (but this can't be possible, because then the maxAMount would be less than the actualAmount)
                         alreadyUsed = numberActual * 1024f / numberMax;
                     }
-                } else { //in this case the actualAmount is in MB
-                    if (maxAmount.contains("GB")) {
+                }
+                else
+                { //in this case the actualAmount is in MB
+                    if (maxAmount.contains("GB"))
+                    {
                         alreadyUsed = numberActual / (numberMax * 1024f);
-                    } else { //We assume the amount is in MB
+                    }
+                    else
+                    { //We assume the amount is in MB
                         alreadyUsed = numberActual / numberMax;
                     }
                 }
@@ -61,8 +77,9 @@ public class HTTPFunctions {
             //Now get the date of last update
             pattern = Pattern.compile("(\\d{2}\\.\\d{2}\\.\\d{4}.{4}\\d{2}:\\d{2})");
             matcher = pattern.matcher(htmlContent);
-            String time ="";
-            while (matcher.find()) {
+            String time = "";
+            while (matcher.find())
+            {
                 time = matcher.group(1);
             }
             time = time.replace(" um ", ",");
@@ -74,25 +91,30 @@ public class HTTPFunctions {
 
             return true;
         }
-        catch(Exception e) {
+        catch (Exception e)
+        {
             e.printStackTrace();
             return false;
         }
     }
 
-    public String getActualAmount() {
+    public String getActualAmount()
+    {
         return this.actualAmount;
     }
 
-    public String getMaxAmount() {
+    public String getMaxAmount()
+    {
         return this.maxAmount;
     }
 
-    public float getAlreadyUsed() {
+    public float getAlreadyUsed()
+    {
         return this.alreadyUsed;
     }
 
-    public String getLastUpdate() {
+    public String getLastUpdate()
+    {
         return this.lastUpdate;
     }
 }
