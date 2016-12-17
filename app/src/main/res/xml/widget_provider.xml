@@ -4,3 +4,5 @@
     android:updatePeriodMillis="21600000"
     android:minHeight="40dp"
     android:minWidth="40dp" />
+
+<!-- updatePeriodMillis has to be at least set to 30 minutes (= 1800000ms). Values below that will be ignored. -->
