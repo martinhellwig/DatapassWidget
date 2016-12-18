@@ -30,6 +30,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
 
     private String trafficWasted;
     private String trafficAvailable;
+    private String trafficUnit;
     private int trafficWastedPercentage;
     private String lastUpdate;
 
@@ -66,6 +67,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
 
             trafficWasted = dataSupplier.getTrafficWasted();
             trafficAvailable = dataSupplier.getTrafficAvailable();
+            trafficUnit = dataSupplier.getTrafficUnit();
             trafficWastedPercentage = dataSupplier.getTrafficWastedPercentage();
             lastUpdate = dataSupplier.getLastUpdate();
 
@@ -75,6 +77,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
             SharedPreferences.Editor editor = sharedPref.edit();
             editor.putString(context.getString(R.string.saved_traffic_wasted), trafficWasted);
             editor.putString(context.getString(R.string.saved_traffic_available), trafficAvailable);
+            editor.putString(context.getString(R.string.saved_traffic_unit), trafficUnit);
             editor.putInt(context.getString(R.string.saved_traffic_wasted_percentage), trafficWastedPercentage);
             editor.putString(context.getString(R.string.saved_lastUpdate), lastUpdate);
             editor.apply();
@@ -90,8 +93,9 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
         if (success)
         {
             // Set the values to the views
-            remoteViews.setTextViewText(R.id.textViewAmount, trafficWasted + "/\n" + trafficAvailable);
-            remoteViews.setTextViewText(R.id.textViewDate, lastUpdate);
+            remoteViews.setTextViewText(R.id.tv_traffic, trafficWasted + "/" + trafficAvailable);
+            remoteViews.setTextViewText(R.id.tv_traffic_unit, trafficUnit);
+            remoteViews.setTextViewText(R.id.tv_last_update, lastUpdate);
             remoteViews.setImageViewBitmap(R.id.imageView, drawCircularProgressBar(trafficWastedPercentage));
 
             // Request for widget update
@@ -107,15 +111,18 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
                 SharedPreferences sharedPref = context
                         .getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE);
                 String amount = sharedPref.getString(context.getString(R.string.saved_traffic_wasted),
-                        context.getString(R.string.nodata_traffic_wasted)) + "/\n" + sharedPref
+                        context.getString(R.string.nodata_traffic_wasted)) + "/" + sharedPref
                         .getString(context.getString(R.string.saved_traffic_available),
                                 context.getString(R.string.nodata_traffic_available));
+                String unit = sharedPref.getString(context.getString(R.string.saved_traffic_unit),
+                        context.getString(R.string.nodata_traffic_unit));
                 String time = sharedPref.getString(context.getString(R.string.saved_lastUpdate),
                         context.getString(R.string.nodata_updatetime));
                 int fraction = sharedPref.getInt(context.getString(R.string.saved_traffic_wasted_percentage), 0);
 
-                remoteViews.setTextViewText(R.id.textViewAmount, amount);
-                remoteViews.setTextViewText(R.id.textViewDate, time);
+                remoteViews.setTextViewText(R.id.tv_traffic, amount);
+                remoteViews.setTextViewText(R.id.tv_traffic_unit, unit);
+                remoteViews.setTextViewText(R.id.tv_last_update, time);
                 remoteViews.setImageViewBitmap(R.id.imageView, drawCircularProgressBar(fraction));
 
                 // Request for widget update
@@ -156,21 +163,21 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
         Bitmap b = Bitmap.createBitmap(300, 300, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(b);
         Paint paint = new Paint();
+        paint.setAntiAlias(true);
+        paint.setFilterBitmap(true);
+        paint.setDither(true);
 
-        //grey full circle
-        paint.setColor(Color.parseColor("#c4c4c4"));
-        paint.setStrokeWidth(40);
-        paint.setStyle(Paint.Style.STROKE);
-        canvas.drawCircle(150, 150, 110, paint);
-
-        //blue circle
-        paint.setColor(Color.parseColor("#0099cc"));
-        paint.setStrokeWidth(40);
+        // Gray circle
+        paint.setColor(Color.parseColor("#e8e8e8"));
+        paint.setStrokeWidth(30);
         paint.setStyle(Paint.Style.FILL);
-        final RectF oval = new RectF();
+        canvas.drawCircle(150, 150, 120, paint);
+
+        // Blue arc
+        paint.setColor(Color.parseColor("#0099cc"));
+        paint.setStrokeWidth(20);
         paint.setStyle(Paint.Style.STROKE);
-        oval.set(40, 40, 260, 260);
-        canvas.drawArc(oval, 270, ((percentage * 360) / 100), false, paint);
+        canvas.drawArc(new RectF(10, 10, 290, 290), 270, ((percentage * 360) / 100), false, paint);
         return b;
     }
 }

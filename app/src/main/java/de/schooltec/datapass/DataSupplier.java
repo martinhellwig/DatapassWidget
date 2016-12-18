@@ -14,7 +14,6 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-
 /**
  * Class providing all necessary data from the T-Mobile datapass homepage. Therefore: creates a server connection,
  * retrieves and parses the html content and extracts the desired information according to a given regex
@@ -150,7 +149,7 @@ class DataSupplier
      */
     String getTrafficWasted()
     {
-        return this.trafficWasted;
+        return trimTrafficString(trafficWasted);
     }
 
     /**
@@ -158,7 +157,32 @@ class DataSupplier
      */
     String getTrafficAvailable()
     {
-        return this.trafficAvailable;
+        return trimTrafficString(trafficAvailable);
+    }
+
+    /**
+     * Trims the input string by the unit (MB or GB). Additionally removes all decimal places for MB values.
+     *
+     * @param input
+     *         Input string.
+     *
+     * @return Trimmed output string.
+     */
+    private String trimTrafficString(String input)
+    {
+        // Ignore digits after the decimal point for MB values as it is not very informative and takes too much space
+        if (this.trafficAvailable.contains("MB")) input = input.replaceFirst(",[0-9]+", "");
+
+        // Remove unit
+        return input.replaceFirst("\\s(MB|GB)", "");
+    }
+
+    /**
+     * @return The unit (MB or GB) of the used / available traffic.
+     */
+    String getTrafficUnit()
+    {
+        return trafficWasted.split("\\s")[1] + "/" + trafficAvailable.split("\\s")[1];
     }
 
     /**
