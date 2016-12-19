@@ -93,7 +93,8 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
         if (success)
         {
             // Set the values to the views
-            remoteViews.setTextViewText(R.id.tv_traffic, trafficWasted + "/" + trafficAvailable);
+            remoteViews.setTextViewText(R.id.tv_traffic, maxThreeDigits(trafficWasted) + "/"
+                    + maxThreeDigits(trafficAvailable));
             remoteViews.setTextViewText(R.id.tv_traffic_unit, trafficUnit);
             remoteViews.setTextViewText(R.id.tv_last_update, lastUpdate);
             remoteViews.setImageViewBitmap(R.id.imageView, drawCircularProgressBar(trafficWastedPercentage));
@@ -110,10 +111,13 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
                 // Set the values to the views (when first started, use standard output, else load last entries)
                 SharedPreferences sharedPref = context
                         .getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-                String amount = sharedPref.getString(context.getString(R.string.saved_traffic_wasted),
-                        context.getString(R.string.nodata_traffic_wasted)) + "/" + sharedPref
+                String amount = maxThreeDigits(sharedPref
+                        .getString(context.getString(R.string.saved_traffic_wasted),
+                                context.getString(R.string.nodata_traffic_wasted)))
+                        + "/"
+                        + maxThreeDigits(sharedPref
                         .getString(context.getString(R.string.saved_traffic_available),
-                                context.getString(R.string.nodata_traffic_available));
+                                context.getString(R.string.nodata_traffic_available)));
                 String unit = sharedPref.getString(context.getString(R.string.saved_traffic_unit),
                         context.getString(R.string.nodata_traffic_unit));
                 String time = sharedPref.getString(context.getString(R.string.saved_lastUpdate),
@@ -142,6 +146,28 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
         }
     }
 
+    /**
+     * This method does show maximum 3 digits of the given input (exception: 1021.23).
+     * e.g.: 234,23 -> 234, 45,32 -> 45,3, 2,56 -> 2,56, 1032,23 -> 1032
+     * @param input
+     *          the input string in the format x.xxx,xxx
+     * @return
+     *          a new string in the same format
+     */
+    private String maxThreeDigits(String input)
+    {
+        if (input.contains(".")) return input.substring(0, 5);
+        else if (input.contains(","))
+        {
+            int position = input.indexOf(",");
+            if (position == 3) return input.substring(0, 4);
+            else if (position == 2) return input.substring(0, 5); // 2 digits before and one after comma
+            else return input;
+
+        }
+        else return input;
+    }
+
     /** Updated the widget with the filled in RemoteViews. */
     private void pushWidgetUpdate()
     {
@@ -168,13 +194,13 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
         paint.setDither(true);
 
         // Gray circle
-        paint.setColor(Color.parseColor("#e8e8e8"));
+        paint.setColor(Color.parseColor("#aae8e8e8"));
         paint.setStrokeWidth(30);
         paint.setStyle(Paint.Style.FILL);
         canvas.drawCircle(150, 150, 120, paint);
 
         // Blue arc
-        paint.setColor(Color.parseColor("#0099cc"));
+        paint.setColor(Color.parseColor("#aa0099cc"));
         paint.setStrokeWidth(20);
         paint.setStyle(Paint.Style.STROKE);
         canvas.drawArc(new RectF(10, 10, 290, 290), 270, ((percentage * 360) / 100), false, paint);

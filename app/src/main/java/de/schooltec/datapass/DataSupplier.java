@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 class DataSupplier
 {
     private final static String URL = "http://datapass.de/";
-    private final static String TRAFFIC_REGEX = "(\\d{1,4},?\\d{0,4}.(GB|MB|KB))";
+    private final static String TRAFFIC_REGEX = "(\\d{0,1}.?\\d{1,3},?\\d{0,4}.(GB|MB|KB))";
     private final static String LAST_UPDATE_REGEX = "(\\d{2}\\.\\d{2}\\.\\d{4}.{4}\\d{2}:\\d{2})";
 
     private String trafficWasted;
@@ -50,15 +50,17 @@ class DataSupplier
             int i = 0;
             while (matcher.find())
             {
-                if (i == 0) trafficWasted = matcher.group(1);
-                if (i == 1) trafficAvailable = matcher.group(1);
+                if (i == 0) trafficWasted = matcher.group(1).trim();
+                if (i == 1) trafficAvailable = matcher.group(1).trim();
                 i++;
             }
 
             float trafficWastedFloat = Float
-                    .parseFloat(trafficWasted.substring(0, trafficWasted.length() - 3).replace(",", "."));
+                    .parseFloat(trafficWasted.substring(0, trafficWasted.length() - 3)
+                            .replace(".", "").replace(",", "."));
             float trafficAvailableFloat = Float
-                    .parseFloat(trafficAvailable.substring(0, trafficAvailable.length() - 3).replace(",", "."));
+                    .parseFloat(trafficAvailable.substring(0, trafficAvailable.length() - 3)
+                            .replace(".", "").replace(",", "."));
 
             // Calculate percentages used according to used unit (MB or GB)
             if (trafficWasted.contains("GB"))
