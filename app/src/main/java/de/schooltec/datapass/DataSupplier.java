@@ -1,7 +1,5 @@
 package de.schooltec.datapass;
 
-import android.util.Log;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -174,11 +172,22 @@ class DataSupplier
      */
     private String trimTrafficString(String input)
     {
-        // Ignore digits after the decimal point for MB values as it is not very informative and takes too much space
-        if (this.trafficAvailable.contains("MB")) input = input.replaceFirst(",[0-9]+", "");
+        // Ignore digits after the decimal point for MB values as it is not very informative and takes too much space.
+        // Also remove the unit.
+        if (input.contains("MB"))
+        {
+            input = input.replaceFirst("(,[0-9]+)?\\sMB", "");
+        }
 
-        // Remove unit
-        return input.replaceFirst("\\s(MB|GB)", "");
+        // For GB values: cut to max one digit after the comma (e.g. 2,5678 GB -> 2,5 GB) for better text fit.
+        // Also remove the uni.
+        if (input.contains("GB"))
+        {
+            input = input.substring(0, input.contains(",") ? input.indexOf(",") + 2 : input.indexOf("GB") - 1);
+        }
+
+        // Remove thousands separator
+        return input.replace(".", "");
     }
 
     /**
