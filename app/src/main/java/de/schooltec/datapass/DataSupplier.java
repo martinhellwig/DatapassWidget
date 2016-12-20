@@ -1,5 +1,7 @@
 package de.schooltec.datapass;
 
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -24,7 +26,7 @@ import java.util.regex.Pattern;
 class DataSupplier
 {
     private final static String URL = "http://datapass.de/";
-    private final static String TRAFFIC_REGEX = "(\\d{0,1}.?\\d{1,3},?\\d{0,4}.(GB|MB|KB))";
+    private final static String TRAFFIC_REGEX = "(\\d{0,1}\\.?\\d{1,3},?\\d{0,4}.(GB|MB|KB))";
     private final static String LAST_UPDATE_REGEX = "(\\d{2}\\.\\d{2}\\.\\d{4}.{4}\\d{2}:\\d{2})";
 
     private String trafficWasted;
