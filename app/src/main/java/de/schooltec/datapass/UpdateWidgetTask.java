@@ -55,16 +55,16 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
     {
         DataSupplier dataSupplier = new DataSupplier();
 
+        // Initializing widget layout
+        remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
+
+        // Register for button event
+        remoteViews.setOnClickPendingIntent(R.id.mainLayout, PendingIntent
+                .getBroadcast(context, 0, new Intent(context, WidgetIntentReceiver.class),
+                        PendingIntent.FLAG_UPDATE_CURRENT));
+
         if (dataSupplier.initialize())
         {
-            // Initializing widget layout
-            remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
-
-            // Register for button event
-            remoteViews.setOnClickPendingIntent(R.id.mainLayout, PendingIntent
-                    .getBroadcast(context, 0, new Intent(context, WidgetIntentReceiver.class),
-                            PendingIntent.FLAG_UPDATE_CURRENT));
-
             trafficWasted = dataSupplier.getTrafficWasted();
             trafficAvailable = dataSupplier.getTrafficAvailable();
             trafficUnit = dataSupplier.getTrafficUnit();
