@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="update_fail">Fehler beim Aktualisieren der Nutzungsdaten</string>
-    <string name="update_fail_wifi">Keine Aktualisierung möglich während WiFi-Verbindung</string>
+    <string name="update_fail_wifi">Aktualisierung nicht möglich. Bitte WiFi deaktivieren</string>
+    <string name="update_fail_con">Aktualisierung nicht möglich. Bitte Mobile Daten aktivieren</string>
     <string name="update_successful">Erfolgreich aktualisiert</string>
+
+    <string name="nodata_row_1">Aktiviere</string>
+    <string name="nodata_row_2">M. Daten</string>
+    <string name="nodata_row_3">für Infos</string>
 </resources>

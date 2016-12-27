@@ -20,7 +20,6 @@
         android:layout_centerVertical="true"
         android:layout_gravity="center_horizontal"
         android:fontFamily="sans-serif-condensed"
-        android:text="@string/empty_amount"
         android:textColor="@android:color/secondary_text_light"
         android:textSize="14sp"
         android:textStyle="bold" />

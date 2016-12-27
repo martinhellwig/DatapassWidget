@@ -1,18 +1,18 @@
 <resources>
     <string name="app_name">Datapass</string>
     <string name="update_fail">Error while updating usage data</string>
-    <string name="update_fail_wifi">Can`t update data while connected via WiFi</string>
+    <string name="update_fail_wifi">Can\'t update data. Please turn of WiFi</string>
+    <string name="update_fail_con">Can\'t update data. Please turn on Mobile Data</string>
     <string name="update_successful">Successfully updated</string>
 
-    <string name="nodata_traffic_wasted">000</string>
-    <string name="nodata_traffic_available">000</string>
-    <string name="nodata_traffic_unit">MB/MB</string>
-    <string name="nodata_updatetime">00.00.-00:00</string>
+    <string name="nodata_row_1">Turn on</string>
+    <string name="nodata_row_2">mob. data</string>
+    <string name="nodata_row_3">for report</string>
+
     <string name="preference_file_key">main_preference</string>
     <string name="saved_traffic_wasted">trafficWasted</string>
     <string name="saved_traffic_available">trafficAvailable</string>
     <string name="saved_traffic_unit">trafficUnit</string>
     <string name="saved_traffic_wasted_percentage">trafficWastedPercentage</string>
     <string name="saved_lastUpdate">lastUpdate</string>
-    <string name="empty_amount">---/---</string>
 </resources>

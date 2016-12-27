@@ -11,7 +11,8 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.net.wifi.WifiManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.widget.RemoteViews;
 import android.widget.Toast;
@@ -110,34 +111,59 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
                 // Set the values to the views (when first started, use standard output, else load last entries)
                 SharedPreferences sharedPref = context
                         .getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-                String amount = sharedPref.getString(context.getString(R.string.saved_traffic_wasted),
-                        context.getString(R.string.nodata_traffic_wasted)) + "/" + sharedPref
-                        .getString(context.getString(R.string.saved_traffic_available),
-                                context.getString(R.string.nodata_traffic_available));
-                String unit = sharedPref.getString(context.getString(R.string.saved_traffic_unit),
-                        context.getString(R.string.nodata_traffic_unit));
-                String time = sharedPref.getString(context.getString(R.string.saved_lastUpdate),
-                        context.getString(R.string.nodata_updatetime));
-                int fraction = sharedPref.getInt(context.getString(R.string.saved_traffic_wasted_percentage), 0);
 
-                remoteViews.setTextViewText(R.id.tv_traffic, amount);
-                remoteViews.setTextViewText(R.id.tv_traffic_unit, unit);
-                remoteViews.setTextViewText(R.id.tv_last_update, time);
-                remoteViews.setImageViewBitmap(R.id.imageView, drawCircularProgressBar(fraction));
+                String trafficUnit;
+                String trafficUsage;
+                int trafficUsagePercentage = 0;
+                String lastUpdate;
+
+                if (sharedPref.getAll().isEmpty())
+                {
+                    trafficUnit = context.getString(R.string.nodata_row_1);
+                    trafficUsage = context.getString(R.string.nodata_row_2);
+                    lastUpdate = context.getString(R.string.nodata_row_3);
+                }
+                else
+                {
+                    trafficUnit = sharedPref.getString(context.getString(R.string.saved_traffic_unit), "");
+                    trafficUsage = sharedPref.getString(context.getString(R.string.saved_traffic_wasted), "") + "/" +
+                            sharedPref.getString(context.getString(R.string.saved_traffic_available), "");
+                    lastUpdate = sharedPref.getString(context.getString(R.string.saved_lastUpdate), "");
+                    trafficUsagePercentage = sharedPref
+                            .getInt(context.getString(R.string.saved_traffic_wasted_percentage), 0);
+                }
+
+                remoteViews.setTextViewText(R.id.tv_traffic_unit, trafficUnit);
+                remoteViews.setTextViewText(R.id.tv_traffic, trafficUsage);
+                remoteViews.setTextViewText(R.id.tv_last_update, lastUpdate);
+                remoteViews.setImageViewBitmap(R.id.imageView, drawCircularProgressBar(trafficUsagePercentage));
 
                 // Request for widget update
                 pushWidgetUpdate();
             }
             else
             {
-                if (((WifiManager) context.getSystemService(Context.WIFI_SERVICE)).isWifiEnabled())
+                NetworkInfo activeNetworkInfo = ((ConnectivityManager) context
+                        .getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
+
+                if (activeNetworkInfo != null)
                 {
-                    Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
+                    if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI)
+                    {
+                        // Connected to WiFi
+                        Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
+                    {
+                        // Connected to Mobile Data but update fails nevertheless
+                        Toast.makeText(context, R.string.update_fail, Toast.LENGTH_LONG).show();
+                        return;
+                    }
                 }
-                else
-                {
-                    Toast.makeText(context, R.string.update_fail, Toast.LENGTH_LONG).show();
-                }
+
+                // No internet connection at all
+                Toast.makeText(context, R.string.update_fail_con, Toast.LENGTH_LONG).show();
             }
         }
     }
@@ -146,8 +172,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
     private void pushWidgetUpdate()
     {
         ComponentName myWidget = new ComponentName(context, WidgetAutoUpdateProvider.class);
-        AppWidgetManager manager = AppWidgetManager.getInstance(context);
-        manager.updateAppWidget(myWidget, remoteViews);
+        AppWidgetManager.getInstance(context).updateAppWidget(myWidget, remoteViews);
     }
 
     /**
