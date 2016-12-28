@@ -14,6 +14,8 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import android.util.Log;
+
 /**
  * Class providing all necessary data from the T-Mobile datapass homepage. Therefore: creates a server connection,
  * retrieves and parses the html content and extracts the desired information according to a given regex
@@ -100,7 +102,7 @@ class DataSupplier
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            Log.e("DataSupplier", "Problem upon getting data from the web.", e);
             return false;
         }
     }

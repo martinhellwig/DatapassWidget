@@ -196,7 +196,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
         paint.setColor(Color.parseColor("#e8e8e8"));
         paint.setStrokeWidth(30);
         paint.setStyle(Paint.Style.FILL);
-        canvas.drawCircle(150, 150, 120, paint);
+        canvas.drawCircle(150, 150, 150, paint);
 
         // Blue arc
         paint.setColor(Color.parseColor("#0099cc"));
