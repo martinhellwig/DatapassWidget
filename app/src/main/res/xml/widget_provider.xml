@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+<appwidget-provider
+    xmlns:android="http://schemas.android.com/apk/res/android"
     android:initialLayout="@layout/widget_layout"
-    android:updatePeriodMillis="21600000"
     android:minHeight="40dp"
-    android:minWidth="40dp" />
+    android:minWidth="40dp"
+    android:updatePeriodMillis="21600000" />
 
-<!-- updatePeriodMillis has to be at least set to 30 minutes (= 1800000ms). Values below that will be ignored. -->
+    <!-- updatePeriodMillis has to be set at least to 30 minutes (= 1800000ms). Values below that will be ignored. -->

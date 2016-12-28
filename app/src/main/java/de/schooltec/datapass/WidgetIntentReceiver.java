@@ -15,7 +15,6 @@ public class WidgetIntentReceiver extends BroadcastReceiver
     @Override
     public void onReceive(Context context, Intent intent)
     {
-        context.startActivity(
-                new Intent(context, WidgetManualUpdateActivity.class).setFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        new UpdateWidgetTask(context, false).execute();
     }
 }

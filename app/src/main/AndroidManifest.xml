@@ -10,13 +10,6 @@
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name">
 
-        <activity
-            android:name="de.schooltec.datapass.WidgetManualUpdateActivity"
-            android:excludeFromRecents="true"
-            android:launchMode="singleInstance"
-            android:noHistory="true"
-            android:theme="@android:style/Theme.Dialog" />
-
         <receiver
             android:name="de.schooltec.datapass.WidgetAutoUpdateProvider"
             android:icon="@drawable/example"
