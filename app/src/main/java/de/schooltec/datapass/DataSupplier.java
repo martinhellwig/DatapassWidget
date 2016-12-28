@@ -1,5 +1,7 @@
 package de.schooltec.datapass;
 
+import android.util.Log;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -27,9 +29,14 @@ class DataSupplier
     private final static String TRAFFIC_REGEX = "(\\d{0,1}\\.?\\d{1,3},?\\d{0,4}.(GB|MB|KB))";
     private final static String LAST_UPDATE_REGEX = "(\\d{2}\\.\\d{2}\\.\\d{4}.{4}\\d{2}:\\d{2})";
 
-    private String trafficWasted;
-    private String trafficAvailable;
+    private float trafficWasted;
+    private String trafficWastedUnit;
+
+    private float trafficAvailable;
+    private String trafficAvailableUnit;
+
     private int trafficWastedPercentage = 0;
+
     private String lastUpdate;
 
     /**
@@ -47,44 +54,42 @@ class DataSupplier
             Pattern pattern = Pattern.compile(TRAFFIC_REGEX);
             Matcher matcher = pattern.matcher(htmlContent);
 
+            String[] trafficWastedRaw = new String[0];
+            String[] trafficAvailableRaw = new String[0];
+
             int i = 0;
             while (matcher.find())
             {
-                if (i == 0) trafficWasted = matcher.group(1).trim();
-                if (i == 1) trafficAvailable = matcher.group(1).trim();
+                if (i == 0) trafficWastedRaw = matcher.group(1).trim().split("\\s");
+                if (i == 1) trafficAvailableRaw = matcher.group(1).trim().split("\\s");
                 i++;
             }
 
-            float trafficWastedFloat = Float
-                    .parseFloat(trafficWasted.substring(0, trafficWasted.length() - 3)
-                            .replace(".", "").replace(",", "."));
-            float trafficAvailableFloat = Float
-                    .parseFloat(trafficAvailable.substring(0, trafficAvailable.length() - 3)
-                            .replace(".", "").replace(",", "."));
+            // Parse results
+            trafficWasted = Float.parseFloat(trafficWastedRaw[0].replace(".", "").replace(",", "."));
+            trafficAvailable = Float.parseFloat(trafficAvailableRaw[0].replace(".", "").replace(",", "."));
+            trafficWastedUnit = trafficWastedRaw[1];
+            trafficAvailableUnit = trafficAvailableRaw[1];
 
-            // Calculate percentages used according to used unit (MB or GB)
-            if (trafficWasted.contains("GB"))
+            // Align traffic volumes consistently to MB or GB
+            if ("KB".equals(trafficWastedUnit))
             {
-                if (trafficAvailable.contains("GB"))
-                {
-                    trafficWastedPercentage = (int) ((trafficWastedFloat / trafficAvailableFloat) * 100f);
-                }
-                else
-                { //We assume the trafficAvailable is in MB (rare edge case)
-                    trafficWastedPercentage = (int) ((trafficWastedFloat * 1024f / trafficAvailableFloat) * 100f);
-                }
+                trafficWasted = 0f;
+                trafficWastedUnit = "MB";
             }
-            else if (trafficWasted.contains("MB"))
+            else if ("MB".equals(trafficWastedUnit) && "GB".equals(trafficAvailableUnit))
             {
-                if (trafficAvailable.contains("GB"))
-                {
-                    trafficWastedPercentage = (int) ((trafficWastedFloat / (trafficAvailableFloat * 1024f)) * 100f);
-                }
-                else
-                { //We assume the trafficAvailable is in MB
-                    trafficWastedPercentage = (int) ((trafficWastedFloat / trafficAvailableFloat) * 100f);
-                }
+                trafficWasted = trafficWasted / 1024f;
+                trafficWastedUnit = "GB";
             }
+            else if ("GB".equals(trafficWastedUnit) && "MB".equals(trafficAvailableUnit))
+            {
+                trafficWasted = trafficWasted * 1024f;
+                trafficWastedUnit = "MB";
+            }
+
+            // Calculate traffic percentages
+            trafficWastedPercentage = (int) ((trafficWasted / trafficAvailable) * 100f);
 
             // Second: get the date of last update
             pattern = Pattern.compile(LAST_UPDATE_REGEX);
@@ -100,7 +105,7 @@ class DataSupplier
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            Log.e("DataSupplier", "Problem upon getting data from the web.", e);
             return false;
         }
     }
@@ -151,7 +156,7 @@ class DataSupplier
      */
     String getTrafficWasted()
     {
-        return trimTrafficString(trafficWasted);
+        return formatTrafficValues(trafficWasted, trafficWastedUnit);
     }
 
     /**
@@ -159,43 +164,35 @@ class DataSupplier
      */
     String getTrafficAvailable()
     {
-        return trimTrafficString(trafficAvailable);
+        return formatTrafficValues(trafficAvailable, trafficAvailableUnit);
     }
 
     /**
-     * Trims the input string by the unit (MB or GB). Additionally removes all decimal places for MB values.
+     * Formats the input traffic according to the given unit.
      *
-     * @param input
-     *         Input string.
+     * @param traffic
+     *         Current traffic.
+     * @param unit
+     *         Current unit.
      *
-     * @return Trimmed output string.
+     * @return Formatted output string.
      */
-    private String trimTrafficString(String input)
+    private String formatTrafficValues(float traffic, String unit)
     {
-        // Ignore digits after the decimal point for MB values as it is not very informative and takes too much space.
-        // Also remove the unit.
-        if (input.contains("MB"))
-        {
-            input = input.replaceFirst("(,[0-9]+)?\\sMB", "");
-        }
+        // For MB values: Ignore digits after the decimal point as it is not very informative and takes too much space.
+        // For GB values: Round to one digit after the comma (e.g. 2,5678 GB -> 2,6 GB) for better text fit.
+        String digitsToRound = "%.0f";
+        if ("GB".equals(unit)) digitsToRound = "%.1f";
 
-        // For GB values: cut to max one digit after the comma (e.g. 2,5678 GB -> 2,5 GB) for better text fit.
-        // Also remove the uni.
-        if (input.contains("GB"))
-        {
-            input = input.substring(0, input.contains(",") ? input.indexOf(",") + 2 : input.indexOf("GB") - 1);
-        }
-
-        // Remove thousands separator
-        return input.replace(".", "");
+        return String.format(Locale.US, digitsToRound, traffic).replace(".", ",");
     }
 
     /**
-     * @return The unit (MB or GB) of the used / available traffic.
+     * @return The unit (MB or GB) of the used / available traffic. Always take the unit from the available traffic.
      */
     String getTrafficUnit()
     {
-        return trafficWasted.split("\\s")[1] + "/" + trafficAvailable.split("\\s")[1];
+        return trafficAvailableUnit;
     }
 
     /**
