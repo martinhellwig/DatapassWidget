@@ -107,7 +107,7 @@ class DataSupplier
         }
         catch (Exception e)
         {
-            Log.e("DataSupplier", "Problem upon getting data from the web.", e);
+            Log.w("DataSupplier", "Problem upon getting data from the web.", e);
             return false;
         }
     }

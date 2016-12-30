@@ -60,9 +60,9 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
         remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_layout);
 
         // Register for button event
-        remoteViews.setOnClickPendingIntent(R.id.mainLayout, PendingIntent
-                .getBroadcast(context, 0, new Intent(context, WidgetIntentReceiver.class),
-                        PendingIntent.FLAG_UPDATE_CURRENT));
+        Intent intent = new Intent(context, WidgetIntentReceiver.class);
+        PendingIntent pendingIntent = PendingIntent.getBroadcast(context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        remoteViews.setOnClickPendingIntent(R.id.mainLayout, pendingIntent);
 
         if (dataSupplier.initialize())
         {
@@ -73,14 +73,14 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
             lastUpdate = dataSupplier.getLastUpdate();
 
             //Store values
-            SharedPreferences sharedPref = context
-                    .getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+            SharedPreferences sharedPref =
+                    context.getSharedPreferences(PreferenceKeys.PREFERENCE_FILE, Context.MODE_PRIVATE);
             SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString(context.getString(R.string.saved_traffic_wasted), trafficWasted);
-            editor.putString(context.getString(R.string.saved_traffic_available), trafficAvailable);
-            editor.putString(context.getString(R.string.saved_traffic_unit), trafficUnit);
-            editor.putInt(context.getString(R.string.saved_traffic_wasted_percentage), trafficWastedPercentage);
-            editor.putString(context.getString(R.string.saved_lastUpdate), lastUpdate);
+            editor.putString(PreferenceKeys.SAVED_TRAFFIC_WASTED, trafficWasted);
+            editor.putString(PreferenceKeys.SAVED_TRAFFIC_AVAILABLE, trafficAvailable);
+            editor.putString(PreferenceKeys.SAVED_TRAFFIC_UNIT, trafficUnit);
+            editor.putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, trafficWastedPercentage);
+            editor.putString(PreferenceKeys.SAVED_LAST_UPDATE, lastUpdate);
             editor.apply();
             return true;
         }
@@ -102,15 +102,18 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
             // Request for widget update
             pushWidgetUpdate();
 
-            if (!silent) Toast.makeText(context, R.string.update_successful, Toast.LENGTH_LONG).show();
+            if (!silent)
+            {
+                Toast.makeText(context, R.string.update_successful, Toast.LENGTH_LONG).show();
+            }
         }
         else
         {
             if (silent)
             {
                 // Set the values to the views (when first started, use standard output, else load last entries)
-                SharedPreferences sharedPref = context
-                        .getSharedPreferences(context.getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+                SharedPreferences sharedPref =
+                        context.getSharedPreferences(PreferenceKeys.PREFERENCE_FILE, Context.MODE_PRIVATE);
 
                 String trafficUnit;
                 String trafficUsage;
@@ -125,12 +128,11 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
                 }
                 else
                 {
-                    trafficUnit = sharedPref.getString(context.getString(R.string.saved_traffic_unit), "");
-                    trafficUsage = sharedPref.getString(context.getString(R.string.saved_traffic_wasted), "") + "/" +
-                            sharedPref.getString(context.getString(R.string.saved_traffic_available), "");
-                    lastUpdate = sharedPref.getString(context.getString(R.string.saved_lastUpdate), "");
-                    trafficUsagePercentage = sharedPref
-                            .getInt(context.getString(R.string.saved_traffic_wasted_percentage), 0);
+                    trafficUnit = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_UNIT, "");
+                    trafficUsage = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_WASTED, "") + "/" +
+                            sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_AVAILABLE, "");
+                    lastUpdate = sharedPref.getString(PreferenceKeys.SAVED_LAST_UPDATE, "");
+                    trafficUsagePercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, 0);
                 }
 
                 remoteViews.setTextViewText(R.id.tv_traffic_unit, trafficUnit);
@@ -152,18 +154,18 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
                     {
                         // Connected to WiFi
                         Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
-                        return;
                     }
                     else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
                     {
                         // Connected to Mobile Data but update fails nevertheless
                         Toast.makeText(context, R.string.update_fail, Toast.LENGTH_LONG).show();
-                        return;
                     }
                 }
-
-                // No internet connection at all
-                Toast.makeText(context, R.string.update_fail_con, Toast.LENGTH_LONG).show();
+                else
+                {
+                    // No internet connection at all
+                    Toast.makeText(context, R.string.update_fail_con, Toast.LENGTH_LONG).show();
+                }
             }
         }
     }
@@ -196,7 +198,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
         paint.setColor(Color.parseColor("#e8e8e8"));
         paint.setStrokeWidth(30);
         paint.setStyle(Paint.Style.FILL);
-        canvas.drawCircle(150, 150, 150, paint);
+        canvas.drawCircle(150, 150, 120, paint);
 
         // Blue arc
         paint.setColor(Color.parseColor("#0099cc"));

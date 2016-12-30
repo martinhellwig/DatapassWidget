@@ -21,4 +21,3 @@ public class WidgetAutoUpdateProvider extends AppWidgetProvider
         new UpdateWidgetTask(context, true).execute();
     }
 }
-

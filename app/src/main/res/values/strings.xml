@@ -1,18 +1,16 @@
 <resources>
     <string name="app_name">Datapass</string>
+
     <string name="update_fail">Error while updating usage data</string>
-    <string name="update_fail_wifi">Can\'t update data. Please turn of WiFi</string>
-    <string name="update_fail_con">Can\'t update data. Please turn on Mobile Data</string>
+    <string name="update_fail_wifi">Can\'t update data. Please turn off WiFi</string>
+    <string name="update_fail_con">Can\'t update data. Please turn on mobile Data</string>
     <string name="update_successful">Successfully updated</string>
 
     <string name="nodata_row_1">Turn on</string>
     <string name="nodata_row_2">mob. data</string>
     <string name="nodata_row_3">for report</string>
 
-    <string name="preference_file_key">main_preference</string>
-    <string name="saved_traffic_wasted">trafficWasted</string>
-    <string name="saved_traffic_available">trafficAvailable</string>
-    <string name="saved_traffic_unit">trafficUnit</string>
-    <string name="saved_traffic_wasted_percentage">trafficWastedPercentage</string>
-    <string name="saved_lastUpdate">lastUpdate</string>
+    <string name="quick_settings_tile_label">Data usage</string>
+    <string name="quick_settings_tile_updating">Updating …</string>
+    <string name="quick_settings_tile_error">Error, see toast!</string>
 </resources>
