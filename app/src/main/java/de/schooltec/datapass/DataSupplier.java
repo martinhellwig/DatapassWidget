@@ -89,11 +89,6 @@ class DataSupplier
                 trafficWasted = trafficWasted / 1024f;
                 trafficWastedUnit = "GB";
             }
-            else if ("GB".equals(trafficWastedUnit) && "MB".equals(trafficAvailableUnit))
-            {
-                trafficWasted = trafficWasted * 1024f;
-                trafficWastedUnit = "MB";
-            }
 
             // Calculate traffic percentages
             trafficWastedPercentage = (int) ((trafficWasted / trafficAvailable) * 100f);
