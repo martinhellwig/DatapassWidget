@@ -3,7 +3,6 @@
     android:initialLayout="@layout/widget_layout"
     android:minHeight="40dp"
     android:minWidth="40dp"
-    android:resizeMode="horizontal|vertical"
     android:updatePeriodMillis="21600000"/>
 
     <!-- updatePeriodMillis has to be set at least to 30 minutes (= 1800000ms). Values below that will be ignored. -->
