@@ -1,5 +1,6 @@
 package de.schooltec.datapass;
 
+import android.content.Context;
 import android.util.Log;
 
 import java.io.BufferedReader;
@@ -46,16 +47,19 @@ class DataSupplier
     /**
      * Initializes the DataSupplier.
      *
-     * @return True if all data were gathered successfully, false otherwise.
+     * @param context
+     *         Application context.
+     *
+     * @return ReturnCode.SUCCESS if all data were gathered successfully, ReturnCode.WASTED if data were parsed
+     * successfully but the available traffic is used up and ReturnCode.ERROR if an error occurred.
      */
-    ReturnCode initialize()
+    ReturnCode initialize(Context context)
     {
         try
         {
             String htmlContent = getStringFromUrl();
 
-            // TODO how is the english version of this? extract to strings.xml
-            if (htmlContent.contains("Inklusivvolumen mit voller Geschwindigkeit verbraucht.")) return WASTED;
+            if (htmlContent.contains(context.getString(R.string.parsable_volume_used_up))) return WASTED;
 
             // First: get the two traffic relevant values
             Pattern pattern = Pattern.compile(TRAFFIC_REGEX);

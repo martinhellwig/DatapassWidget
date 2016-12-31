@@ -27,10 +27,10 @@ import static de.schooltec.datapass.DataSupplier.ReturnCode;
  */
 class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 {
-    // intent extra to transfer ID's of app widgets which should be affected by a specific UpdateWidgetTask instance
+    // Intent extra to transfer ID's of app widgets which should be affected by a specific UpdateWidgetTask instance
     static final String APP_WIDGET_IDS = "INTENT_EXTRA_APP_WIDGET_IDS";
 
-    // static counter to handle multiple pending intents for different app widgets
+    // Static counter to handle multiple pending intents for different app widgets
     private static int pendingIntentId = 0;
 
     private final int[] appWidgetIds;
@@ -69,7 +69,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     @Override
     protected ReturnCode doInBackground(Void... params)
     {
-        return dataSupplier.initialize();
+        return dataSupplier.initialize(context);
     }
 
     @Override

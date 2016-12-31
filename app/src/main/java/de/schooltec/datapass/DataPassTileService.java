@@ -101,7 +101,7 @@ public class DataPassTileService extends TileService
                 DataSupplier dataSupplier = new DataSupplier();
 
                 // get the data live from the server
-                DataSupplier.ReturnCode returnCode = dataSupplier.initialize();
+                DataSupplier.ReturnCode returnCode = dataSupplier.initialize(getApplicationContext());
 
                 if (returnCode != DataSupplier.ReturnCode.ERROR)
                 {
