@@ -100,7 +100,7 @@ public class DataPassTileService extends TileService
             {
                 DataSupplier dataSupplier = new DataSupplier();
 
-                if (dataSupplier.initialize())
+                if (dataSupplier.initialize() == DataSupplier.ReturnCode.SUCCESS)
                 {
                     trafficWastedPercentage = dataSupplier.getTrafficWastedPercentage();
 

@@ -16,7 +16,9 @@ import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import android.util.Log;
+import static de.schooltec.datapass.DataSupplier.ReturnCode.ERROR;
+import static de.schooltec.datapass.DataSupplier.ReturnCode.SUCCESS;
+import static de.schooltec.datapass.DataSupplier.ReturnCode.WASTED;
 
 /**
  * Class providing all necessary data from the T-Mobile datapass homepage. Therefore: creates a server connection,
@@ -46,11 +48,14 @@ class DataSupplier
      *
      * @return True if all data were gathered successfully, false otherwise.
      */
-    boolean initialize()
+    ReturnCode initialize()
     {
         try
         {
             String htmlContent = getStringFromUrl();
+
+            // TODO how is the english version of this? extract to strings.xml
+            if (htmlContent.contains("Inklusivvolumen mit voller Geschwindigkeit verbraucht.")) return WASTED;
 
             // First: get the two traffic relevant values
             Pattern pattern = Pattern.compile(TRAFFIC_REGEX);
@@ -103,12 +108,12 @@ class DataSupplier
                 lastUpdate = outputDate.format(inputDate);
             }
 
-            return true;
+            return SUCCESS;
         }
         catch (Exception e)
         {
             Log.w("DataSupplier", "Problem upon getting data from the web.", e);
-            return false;
+            return ERROR;
         }
     }
 
@@ -211,5 +216,18 @@ class DataSupplier
     String getLastUpdate()
     {
         return this.lastUpdate;
+    }
+
+    /** Enum representing the possible result state the data supplier can return. */
+    enum ReturnCode
+    {
+        /** Data parsed correctly. */
+        SUCCESS,
+
+        /** Mobile data volume spent completely. */
+        WASTED,
+
+        /** Error while parsing data. */
+        ERROR;
     }
 }

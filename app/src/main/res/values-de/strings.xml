@@ -2,12 +2,17 @@
     <string name="update_fail">Fehler beim Aktualisieren der Nutzungsdaten</string>
     <string name="update_fail_wifi">Aktualisierung nicht möglich. Bitte WiFi deaktivieren</string>
     <string name="update_fail_con">Aktualisierung nicht möglich. Bitte mobile Daten aktivieren</string>
+    <string name="update_fail_wasted">Mobiles Datenvolumen aufbraucht</string>
     <string name="update_successful">Erfolgreich aktualisiert</string>
     <string name="update_loading">Lade&#8230;</string>
 
     <string name="nodata_row_1">Aktiviere</string>
     <string name="nodata_row_2">m. Daten</string>
     <string name="nodata_row_3">für Infos</string>
+
+    <string name="volume_reached_row_1">Mobiles</string>
+    <string name="volume_reached_row_2">Volumen</string>
+    <string name="volume_reached_row_3">aufgebraucht</string>
 
     <string name="quick_settings_tile_label">Datenverbrauch</string>
     <string name="quick_settings_tile_updating">Aktualisiere …</string>

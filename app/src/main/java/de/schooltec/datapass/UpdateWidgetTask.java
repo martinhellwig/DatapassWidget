@@ -18,13 +18,15 @@ import android.view.animation.OvershootInterpolator;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
+import static de.schooltec.datapass.DataSupplier.ReturnCode;
+
 /**
  * Asynchronous task updating the widget on request.
  *
  * @author Martin Hellwig
  * @author Markus Hettig
  */
-class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
+class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 {
     private final Context context;
 
@@ -57,85 +59,94 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
     }
 
     @Override
-    protected Boolean doInBackground(Void... params)
+    protected ReturnCode doInBackground(Void... params)
     {
         return dataSupplier.initialize();
     }
 
     @Override
-    protected void onPostExecute(final Boolean success)
+    protected void onPostExecute(final ReturnCode returnCode)
     {
-        if (success)
+        SharedPreferences sharedPref = context
+                .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE, Context.MODE_PRIVATE);
+
+        switch (returnCode)
         {
-            traffic = dataSupplier.getTrafficWasted() + "/" + dataSupplier.getTrafficAvailable();
-            trafficUnit = dataSupplier.getTrafficUnit();
-            trafficWastedPercentage = dataSupplier.getTrafficWastedPercentage();
-            lastUpdate = dataSupplier.getLastUpdate();
+            case SUCCESS:
+                trafficUnit = dataSupplier.getTrafficUnit();
+                traffic = dataSupplier.getTrafficWasted() + "/" + dataSupplier.getTrafficAvailable();
+                trafficWastedPercentage = dataSupplier.getTrafficWastedPercentage();
+                lastUpdate = dataSupplier.getLastUpdate();
 
-            //Store values
-            SharedPreferences sharedPref = context
-                    .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE, Context.MODE_PRIVATE);
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString(PreferenceKeys.SAVED_TRAFFIC_WASTED, dataSupplier.getTrafficWasted());
-            editor.putString(PreferenceKeys.SAVED_TRAFFIC_AVAILABLE, dataSupplier.getTrafficAvailable());
-            editor.putString(PreferenceKeys.SAVED_TRAFFIC_UNIT, trafficUnit);
-            editor.putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, trafficWastedPercentage);
-            editor.putString(PreferenceKeys.SAVED_LAST_UPDATE, lastUpdate);
-            editor.apply();
+                //Store values
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putString(PreferenceKeys.SAVED_TRAFFIC_WASTED, dataSupplier.getTrafficWasted());
+                editor.putString(PreferenceKeys.SAVED_TRAFFIC_AVAILABLE, dataSupplier.getTrafficAvailable());
+                editor.putString(PreferenceKeys.SAVED_TRAFFIC_UNIT, trafficUnit);
+                editor.putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, trafficWastedPercentage);
+                editor.putString(PreferenceKeys.SAVED_LAST_UPDATE, lastUpdate);
+                editor.apply();
 
-            if (!silent) Toast.makeText(context, R.string.update_successful, Toast.LENGTH_LONG).show();
-        }
-        else
-        {
-            // Set the values to the views (when first started, use standard output, else load last entries)
-            SharedPreferences sharedPref = context
-                    .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE, Context.MODE_PRIVATE);
+                if (!silent) Toast.makeText(context, R.string.update_successful, Toast.LENGTH_LONG).show();
 
+                break;
+            case WASTED:
+                trafficUnit = context.getString(R.string.volume_reached_row_1);
+                traffic = context.getString(R.string.volume_reached_row_2);
+                lastUpdate = context.getString(R.string.volume_reached_row_3);
+                trafficWastedPercentage = 100;
 
-            if (sharedPref.getAll().isEmpty())
-            {
-                trafficUnit = context.getString(R.string.nodata_row_1);
-                traffic = context.getString(R.string.nodata_row_2);
-                lastUpdate = context.getString(R.string.nodata_row_3);
-                trafficWastedPercentage = 0;
-            }
-            else
-            {
-                trafficUnit = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_UNIT, "");
-                traffic = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_WASTED, "") + "/" +
-                        sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_AVAILABLE, "");
-                lastUpdate = sharedPref.getString(PreferenceKeys.SAVED_LAST_UPDATE, "");
-                trafficWastedPercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, 0);
-            }
+                if (!silent) Toast.makeText(context, R.string.update_fail_wasted, Toast.LENGTH_LONG).show();
 
-            // Generate Toasts for user feedback if update failed
-            if (!silent)
-            {
-                // Finish the animation
-                trafficWastedPercentage = 0;
-
-                NetworkInfo activeNetworkInfo = ((ConnectivityManager) context
-                        .getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
-
-                if (activeNetworkInfo != null)
+                break;
+            case ERROR:
+                // Set the values to the views (when first started, use standard output, else load last entries)
+                if (sharedPref.getAll().isEmpty())
                 {
-                    if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI)
-                    {
-                        // Connected to WiFi
-                        Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
-                        return;
-                    }
-                    else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
-                    {
-                        // Connected to Mobile Data but update fails nevertheless
-                        Toast.makeText(context, R.string.update_fail, Toast.LENGTH_LONG).show();
-                        return;
-                    }
+                    trafficUnit = context.getString(R.string.nodata_row_1);
+                    traffic = context.getString(R.string.nodata_row_2);
+                    lastUpdate = context.getString(R.string.nodata_row_3);
+                    trafficWastedPercentage = 0;
+                }
+                else
+                {
+                    trafficUnit = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_UNIT, "");
+                    traffic = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_WASTED, "") + "/" +
+                            sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_AVAILABLE, "");
+                    lastUpdate = sharedPref.getString(PreferenceKeys.SAVED_LAST_UPDATE, "");
+                    trafficWastedPercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, 0);
                 }
 
-                // No internet connection at all
-                Toast.makeText(context, R.string.update_fail_con, Toast.LENGTH_LONG).show();
-            }
+                // Generate Toasts for user feedback if update failed
+                if (!silent)
+                {
+                    // Finish the animation
+                    trafficWastedPercentage = 0;
+
+                    NetworkInfo activeNetworkInfo = ((ConnectivityManager) context
+                            .getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
+
+                    if (activeNetworkInfo != null)
+                    {
+                        if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI)
+                        {
+                            // Connected to WiFi
+                            Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                        else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
+                        {
+                            // Connected to Mobile Data but update fails nevertheless
+                            Toast.makeText(context, R.string.update_fail, Toast.LENGTH_LONG).show();
+                            return;
+                        }
+                    }
+
+                    // No internet connection at all
+                    Toast.makeText(context, R.string.update_fail_con, Toast.LENGTH_LONG).show();
+                }
+
+                break;
         }
     }
 
@@ -247,9 +258,9 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, Boolean>
              progress use linear animation to avoid an abrupt jump of progress bar.
              Also set "loading..." text for view.
               */
-            updateWidget(
-                    trafficWastedPercentage <= 0 ? (int) (interpol.getInterpolation(currentAnimProgress / 100f) * 100f)
-                            : currentAnimProgress, "", context.getString(R.string.update_loading), "", false);
+            updateWidget(trafficWastedPercentage <= 0 || trafficWastedPercentage >= 100 ? (int) (
+                            interpol.getInterpolation(currentAnimProgress / 100f) * 100f) : currentAnimProgress, "",
+                    context.getString(R.string.update_loading), "", false);
         }
 
         @Override
