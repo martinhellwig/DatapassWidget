@@ -4,7 +4,7 @@
     <string name="update_fail_con">Aktualisierung nicht möglich. Bitte mobile Daten aktivieren</string>
     <string name="update_fail_wasted">Mobiles Datenvolumen aufbraucht</string>
     <string name="update_successful">Erfolgreich aktualisiert</string>
-    <string name="update_loading">Lade&#8230;</string>
+    <string name="update_loading">Lade …</string>
 
     <string name="nodata_row_1">Aktiviere</string>
     <string name="nodata_row_2">m. Daten</string>

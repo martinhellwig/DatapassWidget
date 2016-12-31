@@ -18,6 +18,6 @@ public class WidgetAutoUpdateProvider extends AppWidgetProvider
     @Override
     public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds)
     {
-        new UpdateWidgetTask(context, true).execute();
+        new UpdateWidgetTask(appWidgetIds, context, true).execute();
     }
 }

@@ -2,7 +2,6 @@ package de.schooltec.datapass;
 
 import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
-import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -28,16 +27,22 @@ import static de.schooltec.datapass.DataSupplier.ReturnCode;
  */
 class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 {
+    // intent extra to transfer ID's of app widgets which should be affected by a specific UpdateWidgetTask instance
+    static final String APP_WIDGET_IDS = "INTENT_EXTRA_APP_WIDGET_IDS";
+
+    // static counter to handle multiple pending intents for different app widgets
+    private static int pendingIntentId = 0;
+
+    private final int[] appWidgetIds;
     private final Context context;
+    private final boolean silent;
+
+    private final DataSupplier dataSupplier;
 
     private String traffic;
     private String trafficUnit;
     private int trafficWastedPercentage = -1; // Init with -1 so at least one indeterminate animation is shown
     private String lastUpdate;
-
-    private final boolean silent;
-
-    private DataSupplier dataSupplier;
 
     /**
      * Constructor.
@@ -47,8 +52,11 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
      * @param silent
      *         Indicates if the widget update is done silent (from receiver) or manually (by button press).
      */
-    UpdateWidgetTask(Context context, boolean silent)
+    UpdateWidgetTask(int[] appWidgetIds, Context context, boolean silent)
     {
+        pendingIntentId++;
+
+        this.appWidgetIds = appWidgetIds;
         this.context = context;
         this.silent = silent;
 
@@ -87,7 +95,10 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 editor.putString(PreferenceKeys.SAVED_LAST_UPDATE, lastUpdate);
                 editor.apply();
 
-                if (!silent) Toast.makeText(context, R.string.update_successful, Toast.LENGTH_LONG).show();
+                if (!silent)
+                {
+                    Toast.makeText(context, R.string.update_successful, Toast.LENGTH_LONG).show();
+                }
 
                 break;
             case WASTED:
@@ -96,7 +107,10 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 lastUpdate = context.getString(R.string.volume_reached_row_3);
                 trafficWastedPercentage = 100;
 
-                if (!silent) Toast.makeText(context, R.string.update_fail_wasted, Toast.LENGTH_LONG).show();
+                if (!silent)
+                {
+                    Toast.makeText(context, R.string.update_fail_wasted, Toast.LENGTH_LONG).show();
+                }
 
                 break;
             case ERROR:
@@ -172,9 +186,10 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         // Register for button event only if animation is finished
         if (setClickListener)
         {
+            Intent intent = new Intent(context, WidgetIntentReceiver.class);
+            intent.putExtra(APP_WIDGET_IDS, appWidgetIds);
             remoteViews.setOnClickPendingIntent(R.id.mainLayout, PendingIntent
-                    .getBroadcast(context, 0, new Intent(context, WidgetIntentReceiver.class),
-                            PendingIntent.FLAG_UPDATE_CURRENT));
+                    .getBroadcast(context, pendingIntentId, intent, PendingIntent.FLAG_UPDATE_CURRENT));
         }
 
         // Set the values to the views
@@ -184,8 +199,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         remoteViews.setImageViewBitmap(R.id.imageView, drawCircularProgressBar(progress));
 
         // Request for widget update
-        ComponentName widget = new ComponentName(context, WidgetAutoUpdateProvider.class);
-        AppWidgetManager.getInstance(context).updateAppWidget(widget, remoteViews);
+        AppWidgetManager.getInstance(context).updateAppWidget(appWidgetIds, remoteViews);
     }
 
     /**

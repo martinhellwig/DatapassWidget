@@ -6,7 +6,7 @@
     <string name="update_fail_con">Can\'t update data. Please turn on mobile Data</string>
     <string name="update_fail_wasted">Mobile data volume spent</string>
     <string name="update_successful">Successfully updated</string>
-    <string name="update_loading">Loading..</string>
+    <string name="update_loading">Loading …</string>
 
     <string name="nodata_row_1">Turn on</string>
     <string name="nodata_row_2">mob. data</string>
