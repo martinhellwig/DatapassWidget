@@ -3,6 +3,7 @@ package de.schooltec.datapass;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.os.AsyncTask;
 
 /**
  * Receiver getting triggered to update the widget manually on click.
@@ -15,6 +16,6 @@ public class WidgetIntentReceiver extends BroadcastReceiver
     @Override
     public void onReceive(Context context, Intent intent)
     {
-        new UpdateWidgetTask(context, false).execute();
+        new UpdateWidgetTask(context, false).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); // Allow parallel ATs
     }
 }
