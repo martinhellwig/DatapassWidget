@@ -18,8 +18,8 @@ import android.service.quicksettings.TileService;
 import android.widget.Toast;
 
 /**
- * TileService delivering a QuickSettingsTile which shows the percentage of the wasted traffic in relation to
- * the available traffic both via it's icon and label. Clicking the Tile will trigger an update.
+ * TileService delivering a QuickSettingsTile which shows the percentage of the wasted traffic in relation to the
+ * available traffic both via it's icon and label. Clicking the Tile will trigger an update.
  *
  * @author Andreas Hellwig
  */
@@ -100,9 +100,19 @@ public class DataPassTileService extends TileService
             {
                 DataSupplier dataSupplier = new DataSupplier();
 
-                if (dataSupplier.initialize() == DataSupplier.ReturnCode.SUCCESS)
+                // get the data live from the server
+                DataSupplier.ReturnCode returnCode = dataSupplier.initialize();
+
+                if (returnCode != DataSupplier.ReturnCode.ERROR)
                 {
-                    trafficWastedPercentage = dataSupplier.getTrafficWastedPercentage();
+                    if (returnCode == DataSupplier.ReturnCode.SUCCESS)
+                    {
+                        trafficWastedPercentage = dataSupplier.getTrafficWastedPercentage();
+                    }
+                    else if (returnCode == DataSupplier.ReturnCode.WASTED)
+                    {
+                        trafficWastedPercentage = 100;
+                    }
 
                     // store value in shared prefs
                     SharedPreferences sharedPref =
@@ -110,7 +120,7 @@ public class DataPassTileService extends TileService
                     sharedPref.edit().putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, trafficWastedPercentage)
                             .apply();
 
-                    return true; // means success
+                    return true; // means general success in getting the percentage
                 }
                 else
                 {
