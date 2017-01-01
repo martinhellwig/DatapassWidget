@@ -31,7 +31,7 @@ import static de.schooltec.datapass.DataSupplier.ReturnCode.WASTED;
 class DataSupplier
 {
     private final static String URL = "http://datapass.de/";
-    private final static String TRAFFIC_REGEX = "(\\d{0,1}\\.?\\d{1,3},?\\d{0,4}.(GB|MB|KB))";
+    private final static String TRAFFIC_REGEX = "(\\d{0,1}\\.?\\d{1,3},?\\d{0,4}.(GB|MB|kB))";
     private final static String LAST_UPDATE_REGEX = "(\\d{2}\\.\\d{2}\\.\\d{4}.{4}\\d{2}:\\d{2})";
 
     private float trafficWasted;
@@ -83,7 +83,7 @@ class DataSupplier
             trafficAvailableUnit = trafficAvailableRaw[1];
 
             // Align traffic volumes consistently to MB or GB
-            if ("KB".equals(trafficWastedUnit))
+            if ("kB".equals(trafficWastedUnit))
             {
                 trafficWasted = 0f;
                 trafficWastedUnit = "MB";
