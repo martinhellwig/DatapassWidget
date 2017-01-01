@@ -8,13 +8,8 @@
     <string name="update_successful">Erfolgreich aktualisiert</string>
     <string name="update_loading">Lade…</string>
 
-    <string name="nodata_row_1">Aktiviere</string>
-    <string name="nodata_row_2">m. Daten</string>
-    <string name="nodata_row_3">für Infos</string>
-
-    <string name="volume_reached_row_1">Mobiles</string>
-    <string name="volume_reached_row_2">Volumen</string>
-    <string name="volume_reached_row_3">aufgebraucht</string>
+    <string name="hint_turn_on_mobile_data">Aktiviere\nMob. Daten\nfür Infos</string>
+    <string name="hint_volume_used_up">Volumen\nverbraucht</string>
 
     <string name="quick_settings_tile_label">Datenverbrauch</string>
     <string name="quick_settings_tile_updating">Aktualisiere …</string>

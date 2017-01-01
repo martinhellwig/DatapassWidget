@@ -43,6 +43,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     private String trafficUnit;
     private int trafficWastedPercentage = -1; // Init with -1 so at least one indeterminate animation is shown
     private String lastUpdate;
+    private String hint;
 
     /**
      * Constructor.
@@ -85,6 +86,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 traffic = dataSupplier.getTrafficWasted() + "/" + dataSupplier.getTrafficAvailable();
                 trafficWastedPercentage = dataSupplier.getTrafficWastedPercentage();
                 lastUpdate = dataSupplier.getLastUpdate();
+                hint = "";
 
                 //Store values
                 SharedPreferences.Editor editor = sharedPref.edit();
@@ -102,10 +104,11 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
                 break;
             case WASTED:
-                trafficUnit = context.getString(R.string.volume_reached_row_1);
-                traffic = context.getString(R.string.volume_reached_row_2);
-                lastUpdate = context.getString(R.string.volume_reached_row_3);
+                trafficUnit = "";
+                traffic = "";
+                lastUpdate = "";
                 trafficWastedPercentage = 100;
+                hint = context.getString(R.string.hint_volume_used_up);
 
                 if (!silent)
                 {
@@ -117,10 +120,11 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 // Set the values to the views (when first started, use standard output, else load last entries)
                 if (sharedPref.getAll().isEmpty())
                 {
-                    trafficUnit = context.getString(R.string.nodata_row_1);
-                    traffic = context.getString(R.string.nodata_row_2);
-                    lastUpdate = context.getString(R.string.nodata_row_3);
+                    trafficUnit = "";
+                    traffic = "";
+                    lastUpdate = "";
                     trafficWastedPercentage = 0;
+                    hint = context.getString(R.string.hint_turn_on_mobile_data);
                 }
                 else
                 {
@@ -129,6 +133,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                             sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_AVAILABLE, "");
                     lastUpdate = sharedPref.getString(PreferenceKeys.SAVED_LAST_UPDATE, "");
                     trafficWastedPercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, 0);
+                    hint = "";
                 }
 
                 // Generate Toasts for user feedback if update failed
@@ -169,11 +174,19 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
      *
      * @param progress
      *         Current progress to set for the circular progress bar
+     * @param trafficUnit
+     *         Unit for the wasted / available traffic (e.g. 'MB' or 'GB')
+     * @param traffic
+     *         The actual ratio of wasted / available traffic (e.g. 2.1 / 5.5)
+     * @param lastUpdate
+     *         Timestamp of the last update (according to the datapass homepage)
+     * @param hint
+     *         An optional hint (e.g. if WiFi is still on)
      * @param setClickListener
      *         Whether to set a click listener for another manual update. Only set if animation is finished to avoid
      *         unnecessary animation tasks to start.
      */
-    private void updateWidget(int progress, String trafficUnit, String traffic, String lastUpdate,
+    private void updateWidget(int progress, String trafficUnit, String traffic, String lastUpdate, String hint,
                               boolean setClickListener)
     {
         /*
@@ -188,8 +201,8 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         {
             Intent intent = new Intent(context, WidgetIntentReceiver.class);
             intent.putExtra(APP_WIDGET_IDS, appWidgetIds);
-            remoteViews.setOnClickPendingIntent(R.id.mainLayout, PendingIntent
-                    .getBroadcast(context, pendingIntentId, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+            remoteViews.setOnClickPendingIntent(R.id.mainLayout,
+                    PendingIntent.getBroadcast(context, pendingIntentId, intent, PendingIntent.FLAG_UPDATE_CURRENT));
         }
 
         // Set the values to the views
@@ -197,6 +210,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         remoteViews.setTextViewText(R.id.tv_traffic, traffic);
         remoteViews.setTextViewText(R.id.tv_last_update, lastUpdate);
         remoteViews.setImageViewBitmap(R.id.imageView, drawCircularProgressBar(progress));
+        remoteViews.setTextViewText(R.id.tv_hint, hint);
 
         // Request for widget update
         AppWidgetManager.getInstance(context).updateAppWidget(appWidgetIds, remoteViews);
@@ -234,6 +248,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         return bitmap;
     }
 
+    /** AsyncTask showing a loading animation for the circular progress bar. */
     private class UpdateAnimationTask extends AsyncTask<Void, Void, Void>
     {
         // Use low tension value for better fit of the blue progressbar when reaching 360°
@@ -282,14 +297,14 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         protected void onProgressUpdate(Void... voids)
         {
             //Update widget with interpolated progress value and set "loading..." text.
-            updateWidget(animationProgressInterpolated, "", context.getString(R.string.update_loading), "", false);
+            updateWidget(animationProgressInterpolated, "", context.getString(R.string.update_loading), "", "", false);
         }
 
         @Override
         protected void onPostExecute(Void aVoid)
         {
             // Update widget with loaded values only when animation is finished
-            updateWidget(trafficWastedPercentage, trafficUnit, traffic, lastUpdate, true);
+            updateWidget(trafficWastedPercentage, trafficUnit, traffic, lastUpdate, hint, true);
         }
     }
 }

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout
-    android:id="@+id/mainLayout"
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/mainLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -10,19 +10,30 @@
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:alpha="0.8"/>
+        android:alpha="0.8" />
+
+    <TextView
+        android:id="@+id/tv_hint"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerInParent="true"
+        android:gravity="center"
+        android:alpha="0.7"
+        android:fontFamily="sans-serif-light"
+        android:textColor="@android:color/secondary_text_light"
+        android:textSize="10sp"
+        tools:ignore="SmallSp" />
 
     <TextView
         android:id="@+id/tv_traffic"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_centerHorizontal="true"
-        android:layout_centerVertical="true"
+        android:layout_centerInParent="true"
         android:layout_gravity="center_horizontal"
         android:fontFamily="sans-serif-condensed"
         android:textColor="@android:color/secondary_text_light"
         android:textSize="14sp"
-        android:textStyle="bold"/>
+        android:textStyle="bold" />
 
     <TextView
         android:id="@+id/tv_traffic_unit"
@@ -37,7 +48,7 @@
         android:textColor="@android:color/secondary_text_light"
         android:textSize="10sp"
         android:textStyle="bold"
-        tools:ignore="SmallSp"/>
+        tools:ignore="SmallSp" />
 
     <TextView
         android:id="@+id/tv_last_update"
@@ -51,6 +62,6 @@
         android:textColor="@android:color/secondary_text_light"
         android:textSize="6sp"
         android:textStyle="bold"
-        tools:ignore="SmallSp"/>
+        tools:ignore="SmallSp" />
 
 </RelativeLayout>
