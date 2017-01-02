@@ -204,6 +204,10 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
             remoteViews.setOnClickPendingIntent(R.id.mainLayout,
                     PendingIntent.getBroadcast(context, pendingIntentId, intent, PendingIntent.FLAG_UPDATE_CURRENT));
         }
+        else
+        {
+            remoteViews.setOnClickPendingIntent(R.id.mainLayout, null);
+        }
 
         // Set the values to the views
         remoteViews.setTextViewText(R.id.tv_traffic_unit, trafficUnit);
