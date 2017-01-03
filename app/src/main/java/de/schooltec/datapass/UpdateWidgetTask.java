@@ -139,9 +139,6 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 // Generate Toasts for user feedback if update failed
                 if (!silent)
                 {
-                    // Finish the animation
-                    trafficWastedPercentage = 0;
-
                     NetworkInfo activeNetworkInfo = ((ConnectivityManager) context
                             .getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
 
@@ -243,6 +240,13 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         paint.setStrokeWidth(30);
         paint.setStyle(Paint.Style.FILL);
         canvas.drawCircle(150, 150, 120, paint);
+
+        // Gray arc (for better discoverability if data volume is low)
+        paint.setColor(Color.parseColor("#e8e8e8"));
+        paint.setAlpha(60);
+        paint.setStrokeWidth(20);
+        paint.setStyle(Paint.Style.STROKE);
+        canvas.drawCircle(150, 150, 140, paint);
 
         // Blue arc
         paint.setColor(Color.parseColor("#0099cc"));
