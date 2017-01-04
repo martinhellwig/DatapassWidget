@@ -7,7 +7,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.net.ConnectivityManager;
@@ -44,6 +43,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     private int trafficWastedPercentage = -1; // Init with -1 so at least one indeterminate animation is shown
     private String lastUpdate;
     private String hint;
+    private int arcColor = R.color.arc_gray_dark;
 
     /**
      * Constructor.
@@ -87,6 +87,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 trafficWastedPercentage = dataSupplier.getTrafficWastedPercentage();
                 lastUpdate = dataSupplier.getLastUpdate();
                 hint = "";
+                arcColor = R.color.arc_blue;
 
                 //Store values
                 SharedPreferences.Editor editor = sharedPref.edit();
@@ -109,6 +110,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 lastUpdate = "";
                 trafficWastedPercentage = 100;
                 hint = context.getString(R.string.hint_volume_used_up);
+                arcColor = R.color.arc_orange;
 
                 if (!silent)
                 {
@@ -124,7 +126,6 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                     traffic = "";
                     lastUpdate = "";
                     trafficWastedPercentage = 0;
-                    hint = context.getString(R.string.hint_turn_on_mobile_data);
                 }
                 else
                 {
@@ -136,31 +137,35 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                     hint = "";
                 }
 
+                arcColor = R.color.arc_gray_dark;
+
                 // Generate Toasts for user feedback if update failed
-                if (!silent)
+                NetworkInfo activeNetworkInfo = ((ConnectivityManager) context
+                        .getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
+
+                if (activeNetworkInfo != null)
                 {
-                    NetworkInfo activeNetworkInfo = ((ConnectivityManager) context
-                            .getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
-
-                    if (activeNetworkInfo != null)
+                    if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI)
                     {
-                        if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI)
-                        {
-                            // Connected to WiFi
-                            Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
-                            return;
-                        }
-                        else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
-                        {
-                            // Connected to Mobile Data but update fails nevertheless
-                            Toast.makeText(context, R.string.update_fail, Toast.LENGTH_LONG).show();
-                            return;
-                        }
-                    }
+                        // Connected to WiFi
+                        if (!silent) Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
+                        if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_turn_off_wifi);
 
-                    // No internet connection at all
-                    Toast.makeText(context, R.string.update_fail_con, Toast.LENGTH_LONG).show();
+                        return;
+                    }
+                    else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
+                    {
+                        // Connected to Mobile Data but update fails nevertheless
+                        if (!silent) Toast.makeText(context, R.string.update_fail, Toast.LENGTH_LONG).show();
+                        if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_update_fail);
+
+                        return;
+                    }
                 }
+
+                // No internet connection at all
+                if (!silent) Toast.makeText(context, R.string.update_fail_con, Toast.LENGTH_LONG).show();
+                if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_turn_on_mobile_data);
 
                 break;
         }
@@ -210,7 +215,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         remoteViews.setTextViewText(R.id.tv_traffic_unit, trafficUnit);
         remoteViews.setTextViewText(R.id.tv_traffic, traffic);
         remoteViews.setTextViewText(R.id.tv_last_update, lastUpdate);
-        remoteViews.setImageViewBitmap(R.id.imageView, drawCircularProgressBar(progress));
+        remoteViews.setImageViewBitmap(R.id.imageView, drawCircularProgressBar(progress, arcColor));
         remoteViews.setTextViewText(R.id.tv_hint, hint);
 
         // Request for widget update
@@ -222,10 +227,12 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
      *
      * @param percentage
      *         Percentage of used traffic.
+     * @param arcColor
+     *         The color for the circular progress bar (e.g. orange for wasted traffic)
      *
      * @return Bitmap with progress bar on it.
      */
-    private Bitmap drawCircularProgressBar(int percentage)
+    private Bitmap drawCircularProgressBar(int percentage, int arcColor)
     {
         Bitmap bitmap = Bitmap.createBitmap(300, 300, Bitmap.Config.ARGB_8888);
 
@@ -236,20 +243,20 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         paint.setDither(true);
 
         // Gray circle
-        paint.setColor(Color.parseColor("#e8e8e8"));
+        paint.setColor(context.getResources().getColor(R.color.arc_gray_light));
         paint.setStrokeWidth(30);
         paint.setStyle(Paint.Style.FILL);
         canvas.drawCircle(150, 150, 120, paint);
 
         // Gray arc (for better discoverability if data volume is low)
-        paint.setColor(Color.parseColor("#e8e8e8"));
+        paint.setColor(context.getResources().getColor(R.color.arc_gray_light));
         paint.setAlpha(60);
         paint.setStrokeWidth(20);
         paint.setStyle(Paint.Style.STROKE);
         canvas.drawCircle(150, 150, 140, paint);
 
         // Blue arc
-        paint.setColor(Color.parseColor("#0099cc"));
+        paint.setColor(context.getResources().getColor(arcColor));
         paint.setStrokeWidth(20);
         paint.setStyle(Paint.Style.STROKE);
         canvas.drawArc(new RectF(10, 10, 290, 290), 270, ((percentage * 360) / 100), false, paint);

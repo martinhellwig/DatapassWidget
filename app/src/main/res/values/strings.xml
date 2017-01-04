@@ -11,6 +11,8 @@
     <string name="update_loading">Loading…</string>
 
     <string name="hint_turn_on_mobile_data">Turn on\nmobile data\nfor report</string>
+    <string name="hint_turn_off_wifi">Turn off\nWiFi\nfor report</string>
+    <string name="hint_update_fail">Update\nnot\npossible</string>
     <string name="hint_volume_used_up">Data\nvolume\nused up</string>
 
     <string name="quick_settings_tile_label">Data usage</string>

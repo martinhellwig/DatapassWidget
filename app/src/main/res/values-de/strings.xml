@@ -9,6 +9,8 @@
     <string name="update_loading">Lade…</string>
 
     <string name="hint_turn_on_mobile_data">Aktiviere\nMob. Daten\nfür Infos</string>
+    <string name="hint_turn_off_wifi">Schalte\nWiFi aus\nfür Infos</string>
+    <string name="hint_update_fail">Update\nnicht\nmöglich</string>
     <string name="hint_volume_used_up">Volumen\nverbraucht</string>
 
     <string name="quick_settings_tile_label">Datenverbrauch</string>
