@@ -5,8 +5,8 @@
     <string name="update_fail_wifi">Aktualisierung nicht möglich. Bitte WiFi deaktivieren</string>
     <string name="update_fail_con">Aktualisierung nicht möglich. Bitte mobile Daten aktivieren</string>
     <string name="update_fail_unsupported_carrier">Dein Anbieter wird derzeit noch nicht unterstützt</string>
-    <string name="update_fail_wasted">Mobiles Datenvolumen aufgebraucht</string>
     <string name="update_successful">Erfolgreich aktualisiert</string>
+    <string name="update_wasted">Mobiles Datenvolumen aufgebraucht</string>
     <string name="update_loading">Lade…</string>
 
     <string name="hint_turn_on_mobile_data">Aktiviere\nmob. Daten\nfür Infos</string>

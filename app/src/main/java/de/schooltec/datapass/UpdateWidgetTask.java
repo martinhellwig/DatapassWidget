@@ -13,6 +13,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import android.view.animation.OvershootInterpolator;
 import android.widget.RemoteViews;
 import android.widget.Toast;
@@ -41,12 +42,12 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
     private final DataSupplier dataSupplier;
 
-    private String traffic;
+    private String trafficProportion;
     private String trafficUnit;
     private int trafficWastedPercentage = -1; // Init with -1 so at least one indeterminate animation is shown
     private String lastUpdate;
     private String hint;
-    private int arcColor = R.color.arc_gray_dark;
+    private int arcColorId = R.color.arc_gray_dark;
 
     /**
      * Constructor.
@@ -81,66 +82,70 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     {
         SharedPreferences sharedPref = context
                 .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
 
         switch (returnCode)
         {
             case SUCCESS:
+                trafficProportion = dataSupplier.getTrafficWasted() + "/" + dataSupplier.getTrafficAvailable();
                 trafficUnit = dataSupplier.getTrafficUnit();
-                traffic = dataSupplier.getTrafficWasted() + "/" + dataSupplier.getTrafficAvailable();
                 trafficWastedPercentage = dataSupplier.getTrafficWastedPercentage();
                 lastUpdate = dataSupplier.getLastUpdate();
                 hint = "";
-                arcColor = R.color.arc_blue;
 
-                //Store values
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putString(PreferenceKeys.SAVED_TRAFFIC_WASTED, dataSupplier.getTrafficWasted());
-                editor.putString(PreferenceKeys.SAVED_TRAFFIC_AVAILABLE, dataSupplier.getTrafficAvailable());
+                arcColorId = R.color.arc_blue;
+
+                // Store values
+                editor.putString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, trafficProportion);
                 editor.putString(PreferenceKeys.SAVED_TRAFFIC_UNIT, trafficUnit);
                 editor.putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, trafficWastedPercentage);
                 editor.putString(PreferenceKeys.SAVED_LAST_UPDATE, lastUpdate);
+                editor.putString(PreferenceKeys.SAVED_HINT, hint);
                 editor.apply();
 
-                if (!silent)
-                {
-                    Toast.makeText(context, R.string.update_successful, Toast.LENGTH_LONG).show();
-                }
+                if (!silent) Toast.makeText(context, R.string.update_successful, Toast.LENGTH_LONG).show();
 
                 break;
             case WASTED:
+                trafficProportion = "";
                 trafficUnit = "";
-                traffic = "";
-                lastUpdate = "";
                 trafficWastedPercentage = 100;
+                lastUpdate = "";
                 hint = context.getString(R.string.hint_volume_used_up);
-                arcColor = R.color.arc_orange;
 
-                if (!silent)
-                {
-                    Toast.makeText(context, R.string.update_fail_wasted, Toast.LENGTH_LONG).show();
-                }
+                arcColorId = R.color.arc_orange;
+
+                // Store values
+                editor.putString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, trafficProportion);
+                editor.putString(PreferenceKeys.SAVED_TRAFFIC_UNIT, trafficUnit);
+                editor.putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, trafficWastedPercentage);
+                editor.putString(PreferenceKeys.SAVED_LAST_UPDATE, lastUpdate);
+                editor.putString(PreferenceKeys.SAVED_HINT, hint);
+                editor.apply();
+
+                if (!silent) Toast.makeText(context, R.string.update_wasted, Toast.LENGTH_LONG).show();
 
                 break;
             case ERROR:
                 // Set the values to the views (when first started, use standard output, else load last entries)
                 if (sharedPref.getAll().isEmpty())
                 {
+                    trafficProportion = "";
                     trafficUnit = "";
-                    traffic = "";
-                    lastUpdate = "";
                     trafficWastedPercentage = 0;
+                    lastUpdate = "";
+                    // 'hint‘ will be set later in this case
                 }
                 else
                 {
+                    trafficProportion = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, "");
                     trafficUnit = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_UNIT, "");
-                    traffic = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_WASTED, "") + "/" +
-                            sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_AVAILABLE, "");
-                    lastUpdate = sharedPref.getString(PreferenceKeys.SAVED_LAST_UPDATE, "");
                     trafficWastedPercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, 0);
-                    hint = "";
+                    lastUpdate = sharedPref.getString(PreferenceKeys.SAVED_LAST_UPDATE, "");
+                    hint = sharedPref.getString(PreferenceKeys.SAVED_HINT, "");
                 }
 
-                arcColor = R.color.arc_gray_dark;
+                arcColorId = R.color.arc_gray_dark;
 
                 // Generate Toasts for user feedback if update failed
                 NetworkInfo activeNetworkInfo = ((ConnectivityManager) context
@@ -154,7 +159,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                         if (!silent) Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
                         if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_turn_off_wifi);
 
-                        return;
+                        break;
                     }
                     else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
                     {
@@ -162,7 +167,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                         if (!silent) Toast.makeText(context, R.string.update_fail, Toast.LENGTH_LONG).show();
                         if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_update_fail);
 
-                        return;
+                        break;
                     }
                 }
 
@@ -172,13 +177,18 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
                 break;
             case CARRIER_UNAVAILABLE:
+                trafficProportion = "";
                 trafficUnit = "";
-                traffic = "";
-                lastUpdate = "";
                 trafficWastedPercentage = 0;
-                arcColor = R.color.arc_gray_dark;
-                if (!silent) Toast.makeText(context, R.string.update_fail_unsupported_carrier, Toast.LENGTH_LONG).show();
+                lastUpdate = "";
                 hint = context.getString(R.string.hint_carrier_unsupported);
+
+                arcColorId = R.color.arc_gray_dark;
+
+                if (!silent) Toast.makeText(context, R.string.update_fail_unsupported_carrier, Toast.LENGTH_LONG)
+                        .show();
+
+                break;
         }
     }
 
@@ -188,9 +198,9 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
      * @param progress
      *         Current progress to set for the circular progress bar
      * @param trafficUnit
-     *         Unit for the wasted / available traffic (e.g. 'MB' or 'GB')
+     *         Unit for the wasted / available traffic ('MB' or 'GB')
      * @param traffic
-     *         The actual ratio of wasted / available traffic (e.g. 2.1 / 5.5)
+     *         The actual proportion of wasted / available traffic (e.g. 2.1 / 5.5)
      * @param lastUpdate
      *         Timestamp of the last update (according to the datapass homepage)
      * @param hint
@@ -226,7 +236,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         remoteViews.setTextViewText(R.id.tv_traffic_unit, trafficUnit);
         remoteViews.setTextViewText(R.id.tv_traffic, traffic);
         remoteViews.setTextViewText(R.id.tv_last_update, lastUpdate);
-        remoteViews.setImageViewBitmap(R.id.imageView, drawCircularProgressBar(progress, arcColor));
+        remoteViews.setImageViewBitmap(R.id.imageView, drawCircularProgressBar(progress, arcColorId));
         remoteViews.setTextViewText(R.id.tv_hint, hint);
 
         // Request for widget update
@@ -238,12 +248,12 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
      *
      * @param percentage
      *         Percentage of used traffic.
-     * @param arcColor
-     *         The color for the circular progress bar (e.g. orange for wasted traffic)
+     * @param arcColorId
+     *         The resource ID of the color for the circular progress bar (e.g. orange for wasted traffic)
      *
      * @return Bitmap with progress bar on it.
      */
-    private Bitmap drawCircularProgressBar(int percentage, int arcColor)
+    private Bitmap drawCircularProgressBar(int percentage, int arcColorId)
     {
         Bitmap bitmap = Bitmap.createBitmap(300, 300, Bitmap.Config.ARGB_8888);
 
@@ -267,10 +277,11 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         canvas.drawCircle(150, 150, 140, paint);
 
         // Blue arc
-        paint.setColor(context.getResources().getColor(arcColor));
+        paint.setColor(context.getResources().getColor(arcColorId));
         paint.setStrokeWidth(20);
         paint.setStyle(Paint.Style.STROKE);
         canvas.drawArc(new RectF(10, 10, 290, 290), 270, ((percentage * 360) / 100), false, paint);
+
         return bitmap;
     }
 
@@ -313,7 +324,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
             }
             catch (InterruptedException e)
             {
-                e.printStackTrace();
+                Log.w("UpdateWidgetTask", "UpdateAnimationTask interrupted.", e);
             }
 
             return null;
@@ -330,7 +341,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         protected void onPostExecute(Void aVoid)
         {
             // Update widget with loaded values only when animation is finished
-            updateWidget(trafficWastedPercentage, trafficUnit, traffic, lastUpdate, hint, true);
+            updateWidget(trafficWastedPercentage, trafficUnit, trafficProportion, lastUpdate, hint, true);
         }
     }
 }
