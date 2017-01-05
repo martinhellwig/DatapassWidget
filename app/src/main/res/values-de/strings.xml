@@ -16,4 +16,6 @@
     <string name="quick_settings_tile_label">Datenverbrauch</string>
     <string name="quick_settings_tile_updating">Aktualisiere …</string>
     <string name="quick_settings_tile_error">Fehler, siehe Toast!</string>
+    <string name="hint_carrier_unsupported">Anbieter\nnicht\nunterstützt</string>
+    <string name="update_fail_unsupported_carrier">Dein Anbieter wird derzeit noch nicht unterstützt</string>
 </resources>

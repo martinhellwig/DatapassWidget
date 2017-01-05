@@ -18,4 +18,6 @@
     <string name="quick_settings_tile_label">Data usage</string>
     <string name="quick_settings_tile_updating">Updating …</string>
     <string name="quick_settings_tile_error">Error, see toast!</string>
+    <string name="hint_carrier_unsupported">Carrier\nnot\nsupported</string>
+    <string name="update_fail_unsupported_carrier">Your carrier is not supported at the moment</string>
 </resources>

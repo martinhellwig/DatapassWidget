@@ -12,11 +12,14 @@ import android.graphics.RectF;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.telephony.TelephonyManager;
 import android.view.animation.OvershootInterpolator;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
-import static de.schooltec.datapass.DataSupplier.ReturnCode;
+import de.schooltec.datapass.datasupplier.DataSupplier;
+
+import static de.schooltec.datapass.datasupplier.DataSupplier.ReturnCode;
 
 /**
  * Asynchronous task updating the widget on request.
@@ -60,8 +63,8 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         this.appWidgetIds = appWidgetIds;
         this.context = context;
         this.silent = silent;
-
-        dataSupplier = new DataSupplier();
+        TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        dataSupplier = DataSupplier.getProviderDataSupplier(manager.getNetworkOperatorName());
 
         // Start loading animation
         new UpdateAnimationTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); // Allow parallel AsyncTasks
@@ -70,7 +73,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     @Override
     protected ReturnCode doInBackground(Void... params)
     {
-        return dataSupplier.initialize(context);
+        return dataSupplier.getData(context);
     }
 
     @Override
@@ -168,6 +171,14 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_turn_on_mobile_data);
 
                 break;
+            case CARRIER_UNAVAILABLE:
+                trafficUnit = "";
+                traffic = "";
+                lastUpdate = "";
+                trafficWastedPercentage = 0;
+                arcColor = R.color.arc_gray_dark;
+                if (!silent) Toast.makeText(context, R.string.update_fail_unsupported_carrier, Toast.LENGTH_LONG).show();
+                hint = context.getString(R.string.hint_carrier_unsupported);
         }
     }
 

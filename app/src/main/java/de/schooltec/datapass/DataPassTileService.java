@@ -15,7 +15,10 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.service.quicksettings.Tile;
 import android.service.quicksettings.TileService;
+import android.telephony.TelephonyManager;
 import android.widget.Toast;
+
+import de.schooltec.datapass.datasupplier.DataSupplier;
 
 /**
  * TileService delivering a QuickSettingsTile which shows the percentage of the wasted traffic in relation to the
@@ -87,8 +90,10 @@ public class DataPassTileService extends TileService
     @Override
     public void onClick()
     {
-        new AsyncTask<Void, Void, Boolean>()
+        new AsyncTask<Void, Void, DataSupplier.ReturnCode>()
         {
+            private DataSupplier dataSupplier;
+
             @Override
             protected void onPreExecute()
             {
@@ -96,14 +101,19 @@ public class DataPassTileService extends TileService
             }
 
             @Override
-            protected Boolean doInBackground(final Void... voids)
+            protected DataSupplier.ReturnCode doInBackground(final Void... voids)
             {
-                DataSupplier dataSupplier = new DataSupplier();
+                TelephonyManager manager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
+                dataSupplier = DataSupplier.getProviderDataSupplier(manager.getNetworkOperatorName());
 
                 // get the data live from the server
-                DataSupplier.ReturnCode returnCode = dataSupplier.initialize(getApplicationContext());
+                return dataSupplier.getData(getApplicationContext());
+            }
 
-                if (returnCode != DataSupplier.ReturnCode.ERROR)
+            @Override
+            protected void onPostExecute(final DataSupplier.ReturnCode returnCode)
+            {
+                if (returnCode == DataSupplier.ReturnCode.SUCCESS || returnCode == DataSupplier.ReturnCode.WASTED)
                 {
                     if (returnCode == DataSupplier.ReturnCode.SUCCESS)
                     {
@@ -120,47 +130,34 @@ public class DataPassTileService extends TileService
                     sharedPref.edit().putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, trafficWastedPercentage)
                             .apply();
 
-                    return true; // means general success in getting the percentage
-                }
-                else
-                {
-                    return false; // means failure
-                }
-            }
-
-            @Override
-            protected void onPostExecute(final Boolean success)
-            {
-                if (success)
-                {
                     updateTileWithPercentage();
                 }
                 else
                 {
                     updateTileWithErrorNote();
 
-                    // get the reason for no success and tell the user via a Toast
-                    NetworkInfo activeNetworkInfo =
-                            ((ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE))
-                                    .getActiveNetworkInfo();
-                    if (activeNetworkInfo != null)
+                    if (returnCode == DataSupplier.ReturnCode.CARRIER_UNAVAILABLE)
                     {
-                        if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI)
-                        {
-                            // Connected to WiFi
-                            Toast.makeText(DataPassTileService.this, R.string.update_fail_wifi, Toast.LENGTH_LONG)
-                                    .show();
-                        }
-                        else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
-                        {
-                            // Connected to mobile Data but update fails nevertheless
-                            Toast.makeText(DataPassTileService.this, R.string.update_fail, Toast.LENGTH_LONG).show();
-                        }
+                        Toast.makeText(DataPassTileService.this, R.string.update_fail_unsupported_carrier, Toast.LENGTH_LONG).show();
                     }
-                    else
-                    {
-                        // No internet connection at all
-                        Toast.makeText(DataPassTileService.this, R.string.update_fail_con, Toast.LENGTH_LONG).show();
+                    else {
+                        // get the reason for no success and tell the user via a Toast
+                        NetworkInfo activeNetworkInfo =
+                                ((ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE))
+                                        .getActiveNetworkInfo();
+                        if (activeNetworkInfo != null) {
+                            if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
+                                // Connected to WiFi
+                                Toast.makeText(DataPassTileService.this, R.string.update_fail_wifi, Toast.LENGTH_LONG)
+                                        .show();
+                            } else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE) {
+                                // Connected to mobile Data but update fails nevertheless
+                                Toast.makeText(DataPassTileService.this, R.string.update_fail, Toast.LENGTH_LONG).show();
+                            }
+                        } else {
+                            // No internet connection at all
+                            Toast.makeText(DataPassTileService.this, R.string.update_fail_con, Toast.LENGTH_LONG).show();
+                        }
                     }
                 }
             }
