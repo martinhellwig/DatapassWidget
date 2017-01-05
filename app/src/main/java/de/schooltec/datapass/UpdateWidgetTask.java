@@ -14,6 +14,8 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.Interpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.RemoteViews;
 import android.widget.Toast;
@@ -44,10 +46,12 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
     private String trafficProportion;
     private String trafficUnit;
-    private int trafficWastedPercentage = -1; // Init with -1 so at least one indeterminate animation is shown
+    private int trafficWastedPercentage = 0;
     private String lastUpdate;
     private String hint;
+
     private int arcColorId = R.color.arc_gray_dark;
+    private boolean loadingFinished = false;
 
     /**
      * Constructor.
@@ -94,6 +98,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 hint = "";
 
                 arcColorId = R.color.arc_blue;
+                loadingFinished = true;
 
                 // Store values
                 editor.putString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, trafficProportion);
@@ -114,6 +119,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 hint = context.getString(R.string.hint_volume_used_up);
 
                 arcColorId = R.color.arc_orange;
+                loadingFinished = true;
 
                 // Store values
                 editor.putString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, trafficProportion);
@@ -146,6 +152,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 }
 
                 arcColorId = R.color.arc_gray_dark;
+                loadingFinished = true;
 
                 // Generate Toasts for user feedback if update failed
                 NetworkInfo activeNetworkInfo = ((ConnectivityManager) context
@@ -184,6 +191,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 hint = context.getString(R.string.hint_carrier_unsupported);
 
                 arcColorId = R.color.arc_gray_dark;
+                loadingFinished = true;
 
                 if (!silent) Toast.makeText(context, R.string.update_fail_unsupported_carrier, Toast.LENGTH_LONG)
                         .show();
@@ -286,40 +294,48 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     }
 
     /** AsyncTask showing a loading animation for the circular progress bar. */
-    private class UpdateAnimationTask extends AsyncTask<Void, Void, Void>
+    private class UpdateAnimationTask extends AsyncTask<Void, Integer, Void>
     {
-        // Use low tension value for better fit of the blue progressbar when reaching 360°
-        OvershootInterpolator interpol = new OvershootInterpolator(0.3f);
+        private static final int ANIMATION_CLOCK_IN_MS = 10;
 
-        private int animationProgress;
-        private int animationProgressInterpolated;
+        // Use AccelerateDecelerateInterpolator to ensure a smooth transition between multiple full circle animations
+        private final Interpolator forwardAnimInterpol = new AccelerateDecelerateInterpolator();
+
+        // Use OvershootInterpolator to get a nice and slow backwards animation from full circle to target arc,
+        // and use a low tension value for better fit of the blue progressbar when being at 360°
+        private final Interpolator backwardAnimInterpol = new OvershootInterpolator(0.3f);
 
         @Override
         protected Void doInBackground(Void... voids)
         {
             try
             {
-                while (true)
+                int animationProgress;
+                int animationProgressInterpolated;
+
+                // Animate circles as long as needed (while animating at least one full circle)
+                while (!loadingFinished)
                 {
-                    /*
-                    Cancel task if desired progress is reached.
-
-                    It's possible that the interpolated value never matches the actual parsed value. Therefore stop
-                    animation already if the interpolated value is simply near the actual value.
-                    The threshold of 3 depends on the possible gap between two interpolated values which in turn depends
-                    on the chosen tension value when initializing the interpolator.
-                     */
-                    animationProgressInterpolated = (int) (interpol.getInterpolation(animationProgress / 100f) * 100f);
-                    if (trafficWastedPercentage >= 0 && (animationProgressInterpolated == trafficWastedPercentage ||
-                            animationProgressInterpolated + 1 == trafficWastedPercentage ||
-                            animationProgressInterpolated + 2 == trafficWastedPercentage))
+                    for (animationProgress = 0; animationProgress < 100; animationProgress++)
                     {
-                        break;
+                        animationProgressInterpolated = Math.round(
+                                forwardAnimInterpol.getInterpolation(animationProgress / 100f) * 100f);
+                        publishProgress(animationProgressInterpolated);
+                        Thread.sleep(ANIMATION_CLOCK_IN_MS);
                     }
+                }
 
-                    publishProgress();
-                    animationProgress = (animationProgress + 1) % 101;
-                    Thread.sleep(10);
+                // Set both progresses to 100 (= 360°) so we can animate backwards from full circle to target arc
+                animationProgress = 100;
+                animationProgressInterpolated = 100;
+
+                while (animationProgressInterpolated > trafficWastedPercentage)
+                {
+                    animationProgress--;
+                    animationProgressInterpolated = Math.round(
+                            backwardAnimInterpol.getInterpolation(animationProgress / 100f) * 100f);
+                    publishProgress(animationProgressInterpolated);
+                    Thread.sleep(ANIMATION_CLOCK_IN_MS);
                 }
             }
             catch (InterruptedException e)
@@ -331,16 +347,17 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         }
 
         @Override
-        protected void onProgressUpdate(Void... voids)
+        protected void onProgressUpdate(Integer... animationProgressInterpolated)
         {
-            //Update widget with interpolated progress value and set "loading..." text.
-            updateWidget(animationProgressInterpolated, "", context.getString(R.string.update_loading), "", "", false);
+            // Update widget with interpolated progress value and set "loading..." text
+            updateWidget(animationProgressInterpolated[0], "", context.getString(R.string.update_loading), "", "",
+                    false);
         }
 
         @Override
         protected void onPostExecute(Void aVoid)
         {
-            // Update widget with loaded values only when animation is finished
+            // Update widget with loaded values as soon as animation is finished
             updateWidget(trafficWastedPercentage, trafficUnit, trafficProportion, lastUpdate, hint, true);
         }
     }
