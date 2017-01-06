@@ -16,13 +16,12 @@ import static de.schooltec.datapass.datasupplier.DataSupplier.ReturnCode.SUCCESS
 import static de.schooltec.datapass.datasupplier.DataSupplier.ReturnCode.WASTED;
 
 /**
- * Class providing all necessary data from the German T-Mobile datapass homepage. Therefore: creates a server connection,
- * retrieves and parses the html content and extracts the desired information according to a given regex
+ * Class providing all necessary information of the German T-Mobile 'datapass' homepage.
  *
  * @author Martin Hellwig
  * @author Markus Hettig
  */
-public class TelekomGermanyDataSupplier extends DataSupplier
+class TelekomGermanyDataSupplier extends DataSupplier
 {
     private final static String URL = "http://datapass.de/";
     private final static String TRAFFIC_REGEX = "(\\d{0,1}\\.?\\d{1,3},?\\d{0,4}.(GB|MB|kB))";

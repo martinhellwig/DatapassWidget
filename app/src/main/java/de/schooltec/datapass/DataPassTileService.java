@@ -101,7 +101,7 @@ public class DataPassTileService extends TileService
             }
 
             @Override
-            protected DataSupplier.ReturnCode doInBackground(final Void... voids)
+            protected DataSupplier.ReturnCode doInBackground(Void... voids)
             {
                 TelephonyManager manager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
                 dataSupplier = DataSupplier.getProviderDataSupplier(manager.getNetworkOperatorName());
@@ -111,7 +111,7 @@ public class DataPassTileService extends TileService
             }
 
             @Override
-            protected void onPostExecute(final DataSupplier.ReturnCode returnCode)
+            protected void onPostExecute(DataSupplier.ReturnCode returnCode)
             {
                 if (returnCode == DataSupplier.ReturnCode.SUCCESS || returnCode == DataSupplier.ReturnCode.WASTED)
                 {
@@ -138,25 +138,35 @@ public class DataPassTileService extends TileService
 
                     if (returnCode == DataSupplier.ReturnCode.CARRIER_UNAVAILABLE)
                     {
-                        Toast.makeText(DataPassTileService.this, R.string.update_fail_unsupported_carrier, Toast.LENGTH_LONG).show();
+                        Toast.makeText(DataPassTileService.this, R.string.update_fail_unsupported_carrier,
+                                Toast.LENGTH_LONG).show();
                     }
-                    else {
+                    else
+                    {
                         // get the reason for no success and tell the user via a Toast
                         NetworkInfo activeNetworkInfo =
                                 ((ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE))
                                         .getActiveNetworkInfo();
-                        if (activeNetworkInfo != null) {
-                            if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
+                        if (activeNetworkInfo != null)
+                        {
+                            if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI)
+                            {
                                 // Connected to WiFi
                                 Toast.makeText(DataPassTileService.this, R.string.update_fail_wifi, Toast.LENGTH_LONG)
                                         .show();
-                            } else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE) {
-                                // Connected to mobile Data but update fails nevertheless
-                                Toast.makeText(DataPassTileService.this, R.string.update_fail, Toast.LENGTH_LONG).show();
                             }
-                        } else {
+                            else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
+                            {
+                                // Connected to mobile Data but update fails nevertheless
+                                Toast.makeText(DataPassTileService.this, R.string.update_fail, Toast.LENGTH_LONG)
+                                        .show();
+                            }
+                        }
+                        else
+                        {
                             // No internet connection at all
-                            Toast.makeText(DataPassTileService.this, R.string.update_fail_con, Toast.LENGTH_LONG).show();
+                            Toast.makeText(DataPassTileService.this, R.string.update_fail_con, Toast.LENGTH_LONG)
+                                    .show();
                         }
                     }
                 }

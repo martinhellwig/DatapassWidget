@@ -1,7 +1,5 @@
 package de.schooltec.datapass.datasupplier;
 
-import android.content.Context;
-
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -12,9 +10,15 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.Locale;
 
+import android.content.Context;
+
 /**
- * Class checking which provider the users phone use and uses the correct parser (if available) to
- * retrieve data.
+ * Class providing a static function to check which provider/carrier the users phone uses and return the correct
+ * concrete DataSupplier if available.
+ * <p>
+ * This class also serves as the base class for every concrete DataSupplier. Thus, it offers the method
+ * {@link #getData(Context)} to retrieve HTML content of a given website, whereas a concrete DataSupplier has to extract
+ * the desired information from that data.
  *
  * @author Martin Hellwig
  * @author Markus Hettig
@@ -46,23 +50,25 @@ public abstract class DataSupplier
      * @param context
      *         Application context.
      *
-     * @return ReturnCode.SUCCESS if all data were gathered successfully, ReturnCode.WASTED if data were parsed
-     * successfully but the available traffic is used up and ReturnCode.ERROR if an error occurred.
+     * @return {@link ReturnCode#SUCCESS} if all data was gathered successfully, {@link ReturnCode#WASTED} if data was
+     * parsed successfully but the available traffic is used up (and no further info about former available traffic
+     * is given), {@link ReturnCode#ERROR} if an error occurred while gathering the data, and
+     * {@link ReturnCode#CARRIER_UNAVAILABLE} if the current carrier used by the phone is not supported.
      */
     public abstract ReturnCode getData(Context context);
 
     /**
-     * "Connects" to the data passe homepage, parses the content and return it as a string.
+     * "Connects" to the given URL, parses the content and returns it as a string.
      *
      * @param url
-     *          the url to get the content from
+     *          The URL to get the content from.
      *
-     * @return Parsed homepage.
+     * @return Parsed content.
      *
      * @throws IOException
      *         If connection fails.
      */
-    protected String getStringFromUrl(String url) throws IOException
+    String getStringFromUrl(String url) throws IOException
     {
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
 
@@ -96,7 +102,7 @@ public abstract class DataSupplier
     }
 
     /**
-     * @return The traffic used by the user (e.g. 125MB from 500MB totally available).
+     * @return The traffic already used/wasted by the user (e.g. 125MB from 500MB totally available).
      */
     public abstract String getTrafficWasted();
 
@@ -115,32 +121,38 @@ public abstract class DataSupplier
      *
      * @return Formatted output string.
      */
-    protected String formatTrafficValues(float traffic, String unit)
+    String formatTrafficValues(float traffic, String unit)
     {
         // For MB values: Ignore digits after the decimal point as it is not very informative and takes too much space.
         // For GB values: Round to one digit after the comma (e.g. 2,5678 GB -> 2,6 GB) for better text fit.
         String digitsToRound = "%.0f";
-        if ("GB".equals(unit)) digitsToRound = "%.1f";
+        if ("GB".equals(unit))
+        {
+            digitsToRound = "%.1f";
+        }
 
         return String.format(Locale.US, digitsToRound, traffic).replace(".", ",");
     }
 
     /**
-     * @return The unit (MB or GB) of the used / available traffic. Always take the unit from the available traffic.
+     * @return The unit (MB or GB) of the used / available traffic. Always returns the unit of the available traffic
+     * if they differ, the unit of the used traffic should then get converted properly into the same unit.
      */
     public abstract String getTrafficUnit();
 
     /**
-     * @return The used traffic as a percentage value (e.g. 42%).
+     * @return The used traffic as a percentage value (e.g. 42%) from 0 to 100.
      */
     public abstract int getTrafficWastedPercentage();
 
     /**
-     * @return Timestamp when the values where updated by T-Mobile. Might lay a few hours in the past.
+     * @return Timestamp when the values where updated by the carrier. Might be in the past by a few hours.
      */
     public abstract String getLastUpdate();
 
-    /** Enum representing the possible result state the data supplier can return. */
+    /**
+     * Enum representing the possible result states the data supplier can return.
+     */
     public enum ReturnCode
     {
         /** Data parsed correctly. */

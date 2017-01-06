@@ -3,11 +3,11 @@ package de.schooltec.datapass.datasupplier;
 import android.content.Context;
 
 /**
- * DummyDataSupplier, which simply says that it can't retrieve any data.
+ * DummyDataSupplier which simply says that it can't retrieve any data.
  *
  * @author Martin Hellwig
  */
-public class DummyDataSupplier extends DataSupplier
+class DummyDataSupplier extends DataSupplier
 {
     @Override
     public ReturnCode getData(Context context)
