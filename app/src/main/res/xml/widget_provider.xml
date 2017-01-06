@@ -3,7 +3,7 @@
     android:initialLayout="@layout/widget_layout"
     android:initialKeyguardLayout="@layout/widget_layout"
     android:widgetCategory="home_screen|keyguard"
-    android:previewImage="@drawable/example"
+    android:previewImage="@drawable/widget_example"
     android:minHeight="40dp"
     android:minWidth="40dp"
     android:updatePeriodMillis="21600000"/>
