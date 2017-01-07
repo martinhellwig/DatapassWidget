@@ -40,10 +40,6 @@
             </intent-filter>
         </receiver>
 
-        <service
-            android:name=".StartConnectionChangeReceiverService"
-            android:enabled="true"/>
-
     </application>
 
 </manifest>

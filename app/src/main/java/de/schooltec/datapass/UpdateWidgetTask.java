@@ -63,6 +63,8 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
         dataSupplier = new DataSupplier();
 
+        ConnectionChangeReceiver.registerReceiver(context);
+
         // Start loading animation
         new UpdateAnimationTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); // Allow parallel AsyncTasks
     }
@@ -77,7 +79,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     protected void onPostExecute(final ReturnCode returnCode)
     {
         SharedPreferences sharedPref = context
-                .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE, Context.MODE_PRIVATE);
+                .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_RESULT_DATA, Context.MODE_PRIVATE);
 
         switch (returnCode)
         {

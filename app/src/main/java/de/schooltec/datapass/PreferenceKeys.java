@@ -7,11 +7,13 @@ package de.schooltec.datapass;
  */
 final class PreferenceKeys
 {
-    static final String PREFERENCE_FILE = "main_preference";
+    static final String PREFERENCE_FILE_RESULT_DATA = "preference_file_result_data";
+    static final String PREFERENCE_FILE_MISC = "preference_file_misc";
 
     static final String SAVED_TRAFFIC_WASTED = "trafficWasted";
     static final String SAVED_TRAFFIC_AVAILABLE = "trafficAvailable";
     static final String SAVED_TRAFFIC_UNIT = "trafficUnit";
     static final String SAVED_TRAFFIC_WASTED_PERCENTAGE = "trafficWastedPercentage";
     static final String SAVED_LAST_UPDATE = "lastUpdate";
+    static final String SAVED_APP_IDS = "app_ids";
 }
