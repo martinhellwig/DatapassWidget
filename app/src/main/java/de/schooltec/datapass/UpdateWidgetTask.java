@@ -134,22 +134,11 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 break;
             case ERROR:
                 // Set the values to the views (when first started, use standard output, else load last entries)
-                if (sharedPref.getAll().isEmpty())
-                {
-                    trafficProportion = "";
-                    trafficUnit = "";
-                    trafficWastedPercentage = 0;
-                    lastUpdate = "";
-                    // 'hint‘ will be set later in this case
-                }
-                else
-                {
-                    trafficProportion = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, "");
-                    trafficUnit = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_UNIT, "");
-                    trafficWastedPercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, 0);
-                    lastUpdate = sharedPref.getString(PreferenceKeys.SAVED_LAST_UPDATE, "");
-                    hint = sharedPref.getString(PreferenceKeys.SAVED_HINT, "");
-                }
+                trafficProportion = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, "");
+                trafficUnit = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_UNIT, "");
+                trafficWastedPercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, 0);
+                lastUpdate = sharedPref.getString(PreferenceKeys.SAVED_LAST_UPDATE, "");
+                hint = sharedPref.getString(PreferenceKeys.SAVED_HINT, "");
 
                 arcColorId = R.color.arc_gray_dark;
                 loadingFinished = true;
