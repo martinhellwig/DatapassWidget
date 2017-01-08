@@ -12,11 +12,17 @@ import android.graphics.RectF;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.telephony.TelephonyManager;
+import android.util.Log;
+import android.view.animation.AccelerateDecelerateInterpolator;
+import android.view.animation.Interpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
-import static de.schooltec.datapass.DataSupplier.ReturnCode;
+import de.schooltec.datapass.datasupplier.DataSupplier;
+
+import static de.schooltec.datapass.datasupplier.DataSupplier.ReturnCode;
 
 /**
  * Asynchronous task updating the widget on request.
@@ -38,12 +44,14 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
     private final DataSupplier dataSupplier;
 
-    private String traffic;
+    private String trafficProportion;
     private String trafficUnit;
-    private int trafficWastedPercentage = -1; // Init with -1 so at least one indeterminate animation is shown
+    private int trafficWastedPercentage = 0;
     private String lastUpdate;
     private String hint;
-    private int arcColor = R.color.arc_gray_dark;
+
+    private int arcColorId = R.color.arc_gray_dark;
+    private boolean loadingFinished = false;
 
     /**
      * Constructor.
@@ -60,8 +68,8 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         this.appWidgetIds = appWidgetIds;
         this.context = context;
         this.silent = silent;
-
-        dataSupplier = new DataSupplier();
+        TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
+        dataSupplier = DataSupplier.getProviderDataSupplier(manager.getNetworkOperatorName());
 
         ConnectionChangeReceiver.registerReceiver(context);
 
@@ -72,74 +80,70 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     @Override
     protected ReturnCode doInBackground(Void... params)
     {
-        return dataSupplier.initialize(context);
+        return dataSupplier.getData(context);
     }
 
     @Override
     protected void onPostExecute(final ReturnCode returnCode)
     {
-        SharedPreferences sharedPref = context
-                .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_RESULT_DATA, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = context.getSharedPreferences(PreferenceKeys.
+                PREFERENCE_FILE_RESULT_DATA, Context.MODE_PRIVATE);
+        SharedPreferences.Editor editor = sharedPref.edit();
 
         switch (returnCode)
         {
             case SUCCESS:
+                trafficProportion = dataSupplier.getTrafficWasted() + "/" + dataSupplier.getTrafficAvailable();
                 trafficUnit = dataSupplier.getTrafficUnit();
-                traffic = dataSupplier.getTrafficWasted() + "/" + dataSupplier.getTrafficAvailable();
                 trafficWastedPercentage = dataSupplier.getTrafficWastedPercentage();
                 lastUpdate = dataSupplier.getLastUpdate();
                 hint = "";
-                arcColor = R.color.arc_blue;
 
-                //Store values
-                SharedPreferences.Editor editor = sharedPref.edit();
-                editor.putString(PreferenceKeys.SAVED_TRAFFIC_WASTED, dataSupplier.getTrafficWasted());
-                editor.putString(PreferenceKeys.SAVED_TRAFFIC_AVAILABLE, dataSupplier.getTrafficAvailable());
+                arcColorId = R.color.arc_blue;
+                loadingFinished = true;
+
+                // Store values
+                editor.putString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, trafficProportion);
                 editor.putString(PreferenceKeys.SAVED_TRAFFIC_UNIT, trafficUnit);
                 editor.putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, trafficWastedPercentage);
                 editor.putString(PreferenceKeys.SAVED_LAST_UPDATE, lastUpdate);
+                editor.putString(PreferenceKeys.SAVED_HINT, hint);
                 editor.apply();
 
-                if (!silent)
-                {
-                    Toast.makeText(context, R.string.update_successful, Toast.LENGTH_LONG).show();
-                }
+                if (!silent) Toast.makeText(context, R.string.update_successful, Toast.LENGTH_LONG).show();
 
                 break;
             case WASTED:
+                trafficProportion = "";
                 trafficUnit = "";
-                traffic = "";
-                lastUpdate = "";
                 trafficWastedPercentage = 100;
+                lastUpdate = "";
                 hint = context.getString(R.string.hint_volume_used_up);
-                arcColor = R.color.arc_orange;
 
-                if (!silent)
-                {
-                    Toast.makeText(context, R.string.update_fail_wasted, Toast.LENGTH_LONG).show();
-                }
+                arcColorId = R.color.arc_orange;
+                loadingFinished = true;
+
+                // Store values
+                editor.putString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, trafficProportion);
+                editor.putString(PreferenceKeys.SAVED_TRAFFIC_UNIT, trafficUnit);
+                editor.putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, trafficWastedPercentage);
+                editor.putString(PreferenceKeys.SAVED_LAST_UPDATE, lastUpdate);
+                editor.putString(PreferenceKeys.SAVED_HINT, hint);
+                editor.apply();
+
+                if (!silent) Toast.makeText(context, R.string.update_wasted, Toast.LENGTH_LONG).show();
 
                 break;
             case ERROR:
                 // Set the values to the views (when first started, use standard output, else load last entries)
-                if (sharedPref.getAll().isEmpty())
-                {
-                    trafficUnit = "";
-                    traffic = "";
-                    lastUpdate = "";
-                    trafficWastedPercentage = 0;
-                }
-                else
-                {
-                    trafficUnit = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_UNIT, "");
-                    traffic = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_WASTED, "") + "/" +
-                            sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_AVAILABLE, "");
-                    lastUpdate = sharedPref.getString(PreferenceKeys.SAVED_LAST_UPDATE, "");
-                    trafficWastedPercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, 0);
-                    hint = "";
-                }
+                trafficProportion = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, "");
+                trafficUnit = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_UNIT, "");
+                trafficWastedPercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, 0);
+                lastUpdate = sharedPref.getString(PreferenceKeys.SAVED_LAST_UPDATE, "");
+                hint = sharedPref.getString(PreferenceKeys.SAVED_HINT, "");
 
-                arcColor = R.color.arc_gray_dark;
+                arcColorId = R.color.arc_gray_dark;
+                loadingFinished = true;
 
                 // Generate Toasts for user feedback if update failed
                 NetworkInfo activeNetworkInfo = ((ConnectivityManager) context
@@ -153,7 +157,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                         if (!silent) Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
                         if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_turn_off_wifi);
 
-                        return;
+                        break;
                     }
                     else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
                     {
@@ -161,13 +165,27 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                         if (!silent) Toast.makeText(context, R.string.update_fail, Toast.LENGTH_LONG).show();
                         if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_update_fail);
 
-                        return;
+                        break;
                     }
                 }
 
                 // No internet connection at all
                 if (!silent) Toast.makeText(context, R.string.update_fail_con, Toast.LENGTH_LONG).show();
                 if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_turn_on_mobile_data);
+
+                break;
+            case CARRIER_UNAVAILABLE:
+                trafficProportion = "";
+                trafficUnit = "";
+                trafficWastedPercentage = 0;
+                lastUpdate = "";
+                hint = context.getString(R.string.hint_carrier_unsupported);
+
+                arcColorId = R.color.arc_gray_dark;
+                loadingFinished = true;
+
+                if (!silent) Toast.makeText(context, R.string.update_fail_unsupported_carrier, Toast.LENGTH_LONG)
+                        .show();
 
                 break;
         }
@@ -179,9 +197,9 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
      * @param progress
      *         Current progress to set for the circular progress bar
      * @param trafficUnit
-     *         Unit for the wasted / available traffic (e.g. 'MB' or 'GB')
+     *         Unit for the wasted / available traffic ('MB' or 'GB')
      * @param traffic
-     *         The actual ratio of wasted / available traffic (e.g. 2.1 / 5.5)
+     *         The actual proportion of wasted / available traffic (e.g. 2.1 / 5.5)
      * @param lastUpdate
      *         Timestamp of the last update (according to the datapass homepage)
      * @param hint
@@ -203,10 +221,14 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         // Register for button event only if animation is finished
         if (setClickListener)
         {
-            Intent intent = new Intent(context, WidgetIntentReceiver.class);
-            intent.putExtra(APP_WIDGET_IDS, appWidgetIds);
-            remoteViews.setOnClickPendingIntent(R.id.mainLayout,
-                    PendingIntent.getBroadcast(context, pendingIntentId, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+            // register for each appId an own listener
+            for (int i = 0; i < appWidgetIds.length; i++)
+            {
+                Intent intent = new Intent(context, WidgetIntentReceiver.class);
+                intent.putExtra(APP_WIDGET_IDS, new int[]{appWidgetIds[i]});
+                remoteViews.setOnClickPendingIntent(R.id.mainLayout,
+                        PendingIntent.getBroadcast(context, pendingIntentId, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+            }
         }
         else
         {
@@ -217,7 +239,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         remoteViews.setTextViewText(R.id.tv_traffic_unit, trafficUnit);
         remoteViews.setTextViewText(R.id.tv_traffic, traffic);
         remoteViews.setTextViewText(R.id.tv_last_update, lastUpdate);
-        remoteViews.setImageViewBitmap(R.id.imageView, drawCircularProgressBar(progress, arcColor));
+        remoteViews.setImageViewBitmap(R.id.imageView, drawCircularProgressBar(progress, arcColorId));
         remoteViews.setTextViewText(R.id.tv_hint, hint);
 
         // Request for widget update
@@ -229,12 +251,12 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
      *
      * @param percentage
      *         Percentage of used traffic.
-     * @param arcColor
-     *         The color for the circular progress bar (e.g. orange for wasted traffic)
+     * @param arcColorId
+     *         The resource ID of the color for the circular progress bar (e.g. orange for wasted traffic)
      *
      * @return Bitmap with progress bar on it.
      */
-    private Bitmap drawCircularProgressBar(int percentage, int arcColor)
+    private Bitmap drawCircularProgressBar(int percentage, int arcColorId)
     {
         Bitmap bitmap = Bitmap.createBitmap(300, 300, Bitmap.Config.ARGB_8888);
 
@@ -258,70 +280,80 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         canvas.drawCircle(150, 150, 140, paint);
 
         // Blue arc
-        paint.setColor(context.getResources().getColor(arcColor));
+        paint.setColor(context.getResources().getColor(arcColorId));
         paint.setStrokeWidth(20);
         paint.setStyle(Paint.Style.STROKE);
         canvas.drawArc(new RectF(10, 10, 290, 290), 270, ((percentage * 360) / 100), false, paint);
+
         return bitmap;
     }
 
     /** AsyncTask showing a loading animation for the circular progress bar. */
-    private class UpdateAnimationTask extends AsyncTask<Void, Void, Void>
+    private class UpdateAnimationTask extends AsyncTask<Void, Integer, Void>
     {
-        // Use low tension value for better fit of the blue progressbar when reaching 360°
-        OvershootInterpolator interpol = new OvershootInterpolator(0.3f);
+        private static final int ANIMATION_CLOCK_IN_MS = 10;
 
-        private int animationProgress;
-        private int animationProgressInterpolated;
+        // Use AccelerateDecelerateInterpolator to ensure a smooth transition between multiple full circle animations
+        private final Interpolator forwardAnimInterpol = new AccelerateDecelerateInterpolator();
+
+        // Use OvershootInterpolator to get a nice and slow backwards animation from full circle to target arc,
+        // and use a low tension value for better fit of the blue progressbar when being at 360°
+        private final Interpolator backwardAnimInterpol = new OvershootInterpolator(0.3f);
 
         @Override
         protected Void doInBackground(Void... voids)
         {
             try
             {
-                while (true)
+                int animationProgress;
+                int animationProgressInterpolated;
+
+                // Animate circles as long as needed (while animating at least one full circle)
+                while (!loadingFinished)
                 {
-                    /*
-                    Cancel task if desired progress is reached.
-
-                    It's possible that the interpolated value never matches the actual parsed value. Therefore stop
-                    animation already if the interpolated value is simply near the actual value.
-                    The threshold of 3 depends on the possible gap between two interpolated values which in turn depends
-                    on the chosen tension value when initializing the interpolator.
-                     */
-                    animationProgressInterpolated = (int) (interpol.getInterpolation(animationProgress / 100f) * 100f);
-                    if (trafficWastedPercentage >= 0 && (animationProgressInterpolated == trafficWastedPercentage ||
-                            animationProgressInterpolated + 1 == trafficWastedPercentage ||
-                            animationProgressInterpolated + 2 == trafficWastedPercentage))
+                    for (animationProgress = 0; animationProgress < 100; animationProgress++)
                     {
-                        break;
+                        animationProgressInterpolated = Math.round(
+                                forwardAnimInterpol.getInterpolation(animationProgress / 100f) * 100f);
+                        publishProgress(animationProgressInterpolated);
+                        Thread.sleep(ANIMATION_CLOCK_IN_MS);
                     }
+                }
 
-                    publishProgress();
-                    animationProgress = (animationProgress + 1) % 101;
-                    Thread.sleep(10);
+                // Set both progresses to 100 (= 360°) so we can animate backwards from full circle to target arc
+                animationProgress = 100;
+                animationProgressInterpolated = 100;
+
+                while (animationProgressInterpolated > trafficWastedPercentage)
+                {
+                    animationProgress--;
+                    animationProgressInterpolated = Math.round(
+                            backwardAnimInterpol.getInterpolation(animationProgress / 100f) * 100f);
+                    publishProgress(animationProgressInterpolated);
+                    Thread.sleep(ANIMATION_CLOCK_IN_MS);
                 }
             }
             catch (InterruptedException e)
             {
-                e.printStackTrace();
+                Log.w("UpdateWidgetTask", "UpdateAnimationTask interrupted.", e);
             }
 
             return null;
         }
 
         @Override
-        protected void onProgressUpdate(Void... voids)
+        protected void onProgressUpdate(Integer... animationProgressInterpolated)
         {
-            //Update widget with interpolated progress value and set "loading..." text.
-            updateWidget(animationProgressInterpolated, "", context.getString(R.string.update_loading), "", "", false);
+            // Update widget with interpolated progress value and set "loading..." text
+            updateWidget(animationProgressInterpolated[0], "", context.getString(R.string.update_loading), "", "",
+                    false);
         }
 
         @Override
         protected void onPostExecute(Void aVoid)
         {
-            // Update widget with loaded values only when animation is finished
-            updateWidget(trafficWastedPercentage, trafficUnit, traffic, lastUpdate, hint, true);
+            // Update widget with loaded values as soon as animation is finished
+            updateWidget(trafficWastedPercentage, trafficUnit, trafficProportion, lastUpdate, hint, true);
         }
     }
 }

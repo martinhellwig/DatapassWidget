@@ -13,7 +13,7 @@
 
         <receiver
             android:name=".WidgetAutoUpdateProvider"
-            android:icon="@drawable/example">
+            android:icon="@drawable/preview_widget">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
             </intent-filter>
@@ -26,7 +26,7 @@
 
         <service
             android:name=".DataPassTileService"
-            android:icon="@drawable/ic_data_usage_white_24dp"
+            android:icon="@drawable/preview_tile"
             android:label="@string/quick_settings_tile_label"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>

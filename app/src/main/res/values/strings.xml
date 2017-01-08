@@ -6,16 +6,18 @@
     <string name="update_fail">Error while updating usage data</string>
     <string name="update_fail_wifi">Can\'t update data. Please turn off WiFi</string>
     <string name="update_fail_con">Can\'t update data. Please turn on mobile Data</string>
-    <string name="update_fail_wasted">Mobile data volume used up</string>
+    <string name="update_fail_unsupported_carrier">Your carrier is not supported at the moment</string>
     <string name="update_successful">Successfully updated</string>
+    <string name="update_wasted">Mobile data volume used up</string>
     <string name="update_loading">Loading…</string>
 
     <string name="hint_turn_on_mobile_data">Turn on\nmobile data\nfor report</string>
     <string name="hint_turn_off_wifi">Turn off\nWiFi\nfor report</string>
     <string name="hint_update_fail">Update\nnot\npossible</string>
     <string name="hint_volume_used_up">Data\nvolume\nused up</string>
+    <string name="hint_carrier_unsupported">Carrier\nnot\nsupported</string>
 
     <string name="quick_settings_tile_label">Data usage</string>
-    <string name="quick_settings_tile_updating">Updating …</string>
+    <string name="quick_settings_tile_updating">Updating…</string>
     <string name="quick_settings_tile_error">Error, see toast!</string>
 </resources>
