@@ -12,6 +12,8 @@
         android:layout_height="match_parent"
         android:alpha="0.8" />
 
+    <!-- For used fontFamily see: http://stackoverflow.com/questions/34444616/how-to-use-roboto-in-xml-layout -->
+
     <TextView
         android:id="@+id/tv_hint"
         android:layout_width="wrap_content"
