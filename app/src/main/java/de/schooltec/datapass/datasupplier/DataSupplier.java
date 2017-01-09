@@ -8,9 +8,18 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
+import android.Manifest;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.support.v4.content.ContextCompat;
+import android.telephony.SubscriptionInfo;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
 
 /**
  * Class providing a static function to check which provider/carrier the users phone uses and return the correct
@@ -28,20 +37,41 @@ public abstract class DataSupplier
     /**
      * Finds the right parser for users carrier.
      *
-     * @param carrier
-     *          the carrier of users phone
+     * @param context
+     *          the context
      * @return
      *          the right parser if available, DummyParser else
      */
-    public static DataSupplier getProviderDataSupplier(String carrier)
+    public static DataSupplier getProviderDataSupplier(Context context)
     {
-        switch (carrier)
+        List<String> carrierNames = new ArrayList<>();
+        //try to find out all carrier names (dualsim etc.)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1 && ContextCompat.
+                checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) ==
+                PackageManager.PERMISSION_GRANTED)
         {
-            case "Telekom.de":
-                return new TelekomGermanyDataSupplier();
-            default:
-                return new DummyDataSupplier();
+            List<SubscriptionInfo> subscriptionInfos = SubscriptionManager.from(context).
+                    getActiveSubscriptionInfoList();
+            for (SubscriptionInfo subscriptionInfo : subscriptionInfos)
+            {
+                carrierNames.add(subscriptionInfo.getCarrierName().toString());
+            }
         }
+        else
+        {
+            carrierNames.add(((TelephonyManager) context.getSystemService(
+                    Context.TELEPHONY_SERVICE)).getNetworkOperatorName());
+        }
+
+        for (String carrier : carrierNames) {
+            switch (carrier) {
+                case "Telekom.de":
+                    return new TelekomGermanyDataSupplier();
+                default:
+            }
+        }
+
+        return new DummyDataSupplier();
     }
 
     /**

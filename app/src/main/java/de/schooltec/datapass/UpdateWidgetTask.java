@@ -68,8 +68,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         this.appWidgetIds = appWidgetIds;
         this.context = context;
         this.silent = silent;
-        TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE);
-        dataSupplier = DataSupplier.getProviderDataSupplier(manager.getNetworkOperatorName());
+        dataSupplier = DataSupplier.getProviderDataSupplier(context);
 
         // Start loading animation
         new UpdateAnimationTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); // Allow parallel AsyncTasks

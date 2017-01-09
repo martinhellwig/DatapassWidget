@@ -103,8 +103,7 @@ public class DataPassTileService extends TileService
             @Override
             protected DataSupplier.ReturnCode doInBackground(Void... voids)
             {
-                TelephonyManager manager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-                dataSupplier = DataSupplier.getProviderDataSupplier(manager.getNetworkOperatorName());
+                dataSupplier = DataSupplier.getProviderDataSupplier(getApplicationContext());
 
                 // get the data live from the server
                 return dataSupplier.getData(getApplicationContext());
