@@ -35,9 +35,6 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     // Intent extra to transfer ID's of app widgets which should be affected by a specific UpdateWidgetTask instance
     static final String APP_WIDGET_IDS = "INTENT_EXTRA_APP_WIDGET_IDS";
 
-    // Static counter to handle multiple pending intents for different app widgets
-    private static int pendingIntentId = 0;
-
     private final int[] appWidgetIds;
     private final Context context;
     private final boolean silent;
@@ -63,8 +60,6 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
      */
     UpdateWidgetTask(int[] appWidgetIds, Context context, boolean silent)
     {
-        pendingIntentId++;
-
         this.appWidgetIds = appWidgetIds;
         this.context = context;
         this.silent = silent;
@@ -221,14 +216,13 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         // Register for button event only if animation is finished
         if (setClickListener)
         {
-            // register for each appId an own listener
-            for (int i = 0; i < appWidgetIds.length; i++)
-            {
-                Intent intent = new Intent(context, WidgetIntentReceiver.class);
-                intent.putExtra(APP_WIDGET_IDS, new int[]{appWidgetIds[i]});
-                remoteViews.setOnClickPendingIntent(R.id.mainLayout,
-                        PendingIntent.getBroadcast(context, pendingIntentId, intent, PendingIntent.FLAG_UPDATE_CURRENT));
-            }
+            // use the first appWidgetId for the requestCode to distinguish between multiple
+            // simultaneous WidgetUpdates. If the requestCode will be the same, the clickEvent will
+            // only trigger one of the placed widgets
+            Intent intent = new Intent(context, WidgetIntentReceiver.class);
+            intent.putExtra(APP_WIDGET_IDS, appWidgetIds);
+            remoteViews.setOnClickPendingIntent(R.id.mainLayout,
+                PendingIntent.getBroadcast(context, appWidgetIds[0], intent, PendingIntent.FLAG_UPDATE_CURRENT));
         }
         else
         {

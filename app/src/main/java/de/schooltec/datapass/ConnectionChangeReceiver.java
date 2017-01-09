@@ -56,16 +56,12 @@ public class ConnectionChangeReceiver extends BroadcastReceiver
                 Set<String> storedAppIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS,
                         new HashSet<String>());
 
-                int[] appIds = new int[storedAppIds.size()];
-                int i = 0;
-                for (String storedAppId :storedAppIds)
+                // make new task for every widget
+                for (String storedAppId : storedAppIds)
                 {
-                    appIds[i] = Integer.valueOf(storedAppId);
-                    i++;
+                    new UpdateWidgetTask(new int[]{Integer.valueOf(storedAppId)}, context, true).
+                            executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
                 }
-
-                new UpdateWidgetTask(appIds, context, true).executeOnExecutor(AsyncTask.
-                        THREAD_POOL_EXECUTOR);
             }
         }
     }
