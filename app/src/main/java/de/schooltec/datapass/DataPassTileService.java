@@ -38,7 +38,7 @@ public class DataPassTileService extends TileService
         super.onCreate();
 
         // get potentially prior stored value from shared prefs
-        SharedPreferences sharedPref = getSharedPreferences(PreferenceKeys.PREFERENCE_FILE, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_RESULT_DATA, Context.MODE_PRIVATE);
         trafficWastedPercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, -1);
     }
 
@@ -125,7 +125,7 @@ public class DataPassTileService extends TileService
 
                     // store value in shared prefs
                     SharedPreferences sharedPref =
-                            getSharedPreferences(PreferenceKeys.PREFERENCE_FILE, Context.MODE_PRIVATE);
+                            getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_RESULT_DATA, Context.MODE_PRIVATE);
                     sharedPref.edit().putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, trafficWastedPercentage)
                             .apply();
 

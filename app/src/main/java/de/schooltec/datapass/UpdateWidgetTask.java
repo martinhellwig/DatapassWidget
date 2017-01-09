@@ -35,9 +35,6 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     // Intent extra to transfer ID's of app widgets which should be affected by a specific UpdateWidgetTask instance
     static final String APP_WIDGET_IDS = "INTENT_EXTRA_APP_WIDGET_IDS";
 
-    // Static counter to handle multiple pending intents for different app widgets
-    private static int pendingIntentId = 0;
-
     private final int[] appWidgetIds;
     private final Context context;
     private final boolean silent;
@@ -63,12 +60,12 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
      */
     UpdateWidgetTask(int[] appWidgetIds, Context context, boolean silent)
     {
-        pendingIntentId++;
-
         this.appWidgetIds = appWidgetIds;
         this.context = context;
         this.silent = silent;
         dataSupplier = DataSupplier.getProviderDataSupplier(context);
+
+        ConnectionChangeReceiver.registerReceiver(context);
 
         // Start loading animation
         new UpdateAnimationTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); // Allow parallel AsyncTasks
@@ -83,8 +80,8 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     @Override
     protected void onPostExecute(final ReturnCode returnCode)
     {
-        SharedPreferences sharedPref = context
-                .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = context.getSharedPreferences(PreferenceKeys.
+                PREFERENCE_FILE_RESULT_DATA, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
 
         switch (returnCode)
@@ -218,10 +215,13 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         // Register for button event only if animation is finished
         if (setClickListener)
         {
+            // use the first appWidgetId for the requestCode to distinguish between multiple
+            // simultaneous WidgetUpdates. If the requestCode will be the same, the clickEvent will
+            // only trigger one of the placed widgets
             Intent intent = new Intent(context, WidgetIntentReceiver.class);
             intent.putExtra(APP_WIDGET_IDS, appWidgetIds);
             remoteViews.setOnClickPendingIntent(R.id.mainLayout,
-                    PendingIntent.getBroadcast(context, pendingIntentId, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+                PendingIntent.getBroadcast(context, appWidgetIds[0], intent, PendingIntent.FLAG_UPDATE_CURRENT));
         }
         else
         {
