@@ -25,17 +25,49 @@ public class WidgetAutoUpdateProvider extends AppWidgetProvider
         SharedPreferences sharedPref = context
                 .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
 
-        Set<String> oldAppIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS,
+        Set<String> currentAppIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS,
                 new HashSet<String>());
         for (int appId : appWidgetIds)
         {
-            oldAppIds.add(String.valueOf(appId));
+            currentAppIds.add(String.valueOf(appId));
         }
 
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putStringSet(PreferenceKeys.SAVED_APP_IDS, oldAppIds);
+        editor.putStringSet(PreferenceKeys.SAVED_APP_IDS, currentAppIds);
         editor.apply();
 
         new UpdateWidgetTask(appWidgetIds, context, true).execute();
+    }
+
+    @Override
+    public void onDeleted(Context context, int[] appWidgetIds) {
+        SharedPreferences sharedPref = context
+                .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
+
+        Set<String> toStoreIds = new HashSet<>();
+        Set<String> currentAppIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS,
+                new HashSet<String>());
+        for (String currentAppId : currentAppIds)
+        {
+            boolean delete = false;
+            for (int toDeleteAppId : appWidgetIds)
+            {
+                if (Integer.valueOf(currentAppId) == toDeleteAppId) delete = true;
+            }
+
+            if (!delete) toStoreIds.add(currentAppId);
+        }
+
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putStringSet(PreferenceKeys.SAVED_APP_IDS, toStoreIds);
+        editor.apply();
+
+        super.onDeleted(context, appWidgetIds);
+    }
+
+    @Override
+    public void onRestored(Context context, int[] oldWidgetIds, int[] newWidgetIds) {
+        // may be used to restore old widget-specific data
+        super.onRestored(context, oldWidgetIds, newWidgetIds);
     }
 }
