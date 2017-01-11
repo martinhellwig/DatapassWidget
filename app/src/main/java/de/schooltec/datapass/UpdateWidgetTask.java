@@ -12,7 +12,6 @@ import android.graphics.RectF;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
@@ -37,7 +36,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
     private final int[] appWidgetIds;
     private final Context context;
-    private final boolean silent;
+    private Mode mode;
 
     private final DataSupplier dataSupplier;
 
@@ -55,20 +54,24 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
      *
      * @param context
      *         The current context.
-     * @param silent
-     *         Indicates if the widget update is done silent (from receiver) or manually (by button press).
+     * @param mode
+     *         Indicates if the widget update is done silent (from receiver), manually (by button press) or ultra silent
+     *         (on wifi / mobile data state change).
      */
-    UpdateWidgetTask(int[] appWidgetIds, Context context, boolean silent)
+    UpdateWidgetTask(int[] appWidgetIds, Context context, Mode mode)
     {
         this.appWidgetIds = appWidgetIds;
         this.context = context;
-        this.silent = silent;
+        this.mode = mode;
         dataSupplier = DataSupplier.getProviderDataSupplier(context);
 
         ConnectionChangeReceiver.registerReceiver(context);
 
         // Start loading animation
-        new UpdateAnimationTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); // Allow parallel AsyncTasks
+        if (mode != Mode.ULTRA_SILENT)
+        {
+            new UpdateAnimationTask().executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); // Allow parallel AsyncTasks
+        }
     }
 
     @Override
@@ -104,7 +107,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 editor.putString(PreferenceKeys.SAVED_HINT, hint);
                 editor.apply();
 
-                if (!silent) Toast.makeText(context, R.string.update_successful, Toast.LENGTH_LONG).show();
+                if (mode == Mode.REGULAR) Toast.makeText(context, R.string.update_successful, Toast.LENGTH_LONG).show();
 
                 break;
             case WASTED:
@@ -125,7 +128,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 editor.putString(PreferenceKeys.SAVED_HINT, hint);
                 editor.apply();
 
-                if (!silent) Toast.makeText(context, R.string.update_wasted, Toast.LENGTH_LONG).show();
+                if (mode == Mode.REGULAR) Toast.makeText(context, R.string.update_wasted, Toast.LENGTH_LONG).show();
 
                 break;
             case ERROR:
@@ -145,26 +148,32 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
                 if (activeNetworkInfo != null)
                 {
-                    if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI)
+                    switch (activeNetworkInfo.getType())
                     {
-                        // Connected to WiFi
-                        if (!silent) Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
-                        if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_turn_off_wifi);
+                        case ConnectivityManager.TYPE_WIFI:
+                            // Connected to WiFi
+                            if (mode == Mode.REGULAR)
+                            {
+                                Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
+                            }
+                            if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_turn_off_wifi);
 
-                        break;
-                    }
-                    else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
-                    {
-                        // Connected to Mobile Data but update fails nevertheless
-                        if (!silent) Toast.makeText(context, R.string.update_fail, Toast.LENGTH_LONG).show();
-                        if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_update_fail);
+                            break;
 
-                        break;
+                        case ConnectivityManager.TYPE_MOBILE:
+                            // Connected to Mobile Data but update fails nevertheless
+                            if (mode == Mode.REGULAR)
+                            {
+                                Toast.makeText(context, R.string.update_fail, Toast.LENGTH_LONG).show();
+                            }
+                            if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_update_fail);
+
+                            break;
                     }
                 }
 
                 // No internet connection at all
-                if (!silent) Toast.makeText(context, R.string.update_fail_con, Toast.LENGTH_LONG).show();
+                if (mode == Mode.REGULAR) Toast.makeText(context, R.string.update_fail_con, Toast.LENGTH_LONG).show();
                 if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_turn_on_mobile_data);
 
                 break;
@@ -178,10 +187,18 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 arcColorId = R.color.arc_gray_dark;
                 loadingFinished = true;
 
-                if (!silent) Toast.makeText(context, R.string.update_fail_unsupported_carrier, Toast.LENGTH_LONG)
-                        .show();
+                if (mode == Mode.REGULAR)
+                {
+                    Toast.makeText(context, R.string.update_fail_unsupported_carrier, Toast.LENGTH_LONG).show();
+                }
 
                 break;
+        }
+
+        // Update widget manually without animation
+        if (mode == Mode.ULTRA_SILENT)
+        {
+            updateWidget(trafficWastedPercentage, trafficUnit, trafficProportion, lastUpdate, hint, true);
         }
     }
 
@@ -221,7 +238,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
             Intent intent = new Intent(context, WidgetIntentReceiver.class);
             intent.putExtra(APP_WIDGET_IDS, appWidgetIds);
             remoteViews.setOnClickPendingIntent(R.id.mainLayout,
-                PendingIntent.getBroadcast(context, appWidgetIds[0], intent, PendingIntent.FLAG_UPDATE_CURRENT));
+                    PendingIntent.getBroadcast(context, appWidgetIds[0], intent, PendingIntent.FLAG_UPDATE_CURRENT));
         }
         else
         {
@@ -306,8 +323,8 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 {
                     for (animationProgress = 0; animationProgress < 100; animationProgress++)
                     {
-                        animationProgressInterpolated = Math.round(
-                                forwardAnimInterpol.getInterpolation(animationProgress / 100f) * 100f);
+                        animationProgressInterpolated = Math
+                                .round(forwardAnimInterpol.getInterpolation(animationProgress / 100f) * 100f);
                         publishProgress(animationProgressInterpolated);
                         Thread.sleep(ANIMATION_CLOCK_IN_MS);
                     }
@@ -320,8 +337,8 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 while (animationProgressInterpolated > trafficWastedPercentage)
                 {
                     animationProgress--;
-                    animationProgressInterpolated = Math.round(
-                            backwardAnimInterpol.getInterpolation(animationProgress / 100f) * 100f);
+                    animationProgressInterpolated = Math
+                            .round(backwardAnimInterpol.getInterpolation(animationProgress / 100f) * 100f);
                     publishProgress(animationProgressInterpolated);
                     Thread.sleep(ANIMATION_CLOCK_IN_MS);
                 }
@@ -348,5 +365,20 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
             // Update widget with loaded values as soon as animation is finished
             updateWidget(trafficWastedPercentage, trafficUnit, trafficProportion, lastUpdate, hint, true);
         }
+    }
+
+    /**
+     * Enum for the possible update behaviors.
+     */
+    public enum Mode
+    {
+        /** Normal update with animation and toasts. */
+        REGULAR,
+
+        /** Update with animation but without toasts (e.g. for auto update every 6h). */
+        SILENT,
+
+        /** Update without animation and toasts. */
+        ULTRA_SILENT,
     }
 }

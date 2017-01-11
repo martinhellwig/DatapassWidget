@@ -25,8 +25,7 @@ public class WidgetAutoUpdateProvider extends AppWidgetProvider
         SharedPreferences sharedPref = context
                 .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
 
-        Set<String> currentAppIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS,
-                new HashSet<String>());
+        Set<String> currentAppIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS, new HashSet<String>());
         for (int appId : appWidgetIds)
         {
             currentAppIds.add(String.valueOf(appId));
@@ -36,26 +35,26 @@ public class WidgetAutoUpdateProvider extends AppWidgetProvider
         editor.putStringSet(PreferenceKeys.SAVED_APP_IDS, currentAppIds);
         editor.apply();
 
-        new UpdateWidgetTask(appWidgetIds, context, true).execute();
+        new UpdateWidgetTask(appWidgetIds, context, UpdateWidgetTask.Mode.SILENT).execute();
     }
 
     @Override
-    public void onDeleted(Context context, int[] appWidgetIds) {
+    public void onDeleted(Context context, int[] appWidgetIds)
+    {
         SharedPreferences sharedPref = context
                 .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
 
         Set<String> toStoreIds = new HashSet<>();
-        Set<String> currentAppIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS,
-                new HashSet<String>());
+        Set<String> currentAppIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS, new HashSet<String>());
         for (String currentAppId : currentAppIds)
         {
-            boolean delete = false;
             for (int toDeleteAppId : appWidgetIds)
             {
-                if (Integer.valueOf(currentAppId) == toDeleteAppId) delete = true;
+                if (Integer.valueOf(currentAppId) == toDeleteAppId)
+                {
+                    toStoreIds.add(currentAppId);
+                }
             }
-
-            if (!delete) toStoreIds.add(currentAppId);
         }
 
         SharedPreferences.Editor editor = sharedPref.edit();
@@ -66,7 +65,8 @@ public class WidgetAutoUpdateProvider extends AppWidgetProvider
     }
 
     @Override
-    public void onRestored(Context context, int[] oldWidgetIds, int[] newWidgetIds) {
+    public void onRestored(Context context, int[] oldWidgetIds, int[] newWidgetIds)
+    {
         // may be used to restore old widget-specific data
         super.onRestored(context, oldWidgetIds, newWidgetIds);
     }

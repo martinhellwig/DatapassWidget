@@ -155,13 +155,7 @@ public abstract class DataSupplier
     {
         // For MB values: Ignore digits after the decimal point as it is not very informative and takes too much space.
         // For GB values: Round to one digit after the comma (e.g. 2,5678 GB -> 2,6 GB) for better text fit.
-        String digitsToRound = "%.0f";
-        if ("GB".equals(unit))
-        {
-            digitsToRound = "%.1f";
-        }
-
-        return String.format(Locale.US, digitsToRound, traffic).replace(".", ",");
+        return String.format(Locale.US, "GB".equals(unit) ? "%.1f" : "%.0f", traffic).replace(".", ",");
     }
 
     /**

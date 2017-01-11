@@ -88,7 +88,7 @@ class TelekomGermanyDataSupplier extends DataSupplier
             while (matcher.find())
             {
                 Date inputDate = new SimpleDateFormat("dd.MM.yyyy 'um' HH:mm", Locale.GERMAN).parse(matcher.group(1));
-                SimpleDateFormat outputDate = new SimpleDateFormat("dd.MM - HH:mm", Locale.GERMAN);
+                SimpleDateFormat outputDate = new SimpleDateFormat("dd.MM. - HH:mm", Locale.GERMAN);
                 lastUpdate = outputDate.format(inputDate);
             }
 

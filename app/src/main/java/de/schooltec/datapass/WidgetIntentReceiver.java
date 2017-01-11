@@ -16,7 +16,8 @@ public class WidgetIntentReceiver extends BroadcastReceiver
     @Override
     public void onReceive(Context context, Intent intent)
     {
-        new UpdateWidgetTask(intent.getIntArrayExtra(UpdateWidgetTask.APP_WIDGET_IDS), context, false)
+        new UpdateWidgetTask(intent.getIntArrayExtra(UpdateWidgetTask.APP_WIDGET_IDS), context,
+                UpdateWidgetTask.Mode.REGULAR)
                 .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR); // Allow parallel AsyncTasks
     }
 }
