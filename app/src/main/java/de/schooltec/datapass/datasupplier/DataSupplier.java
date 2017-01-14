@@ -1,5 +1,13 @@
 package de.schooltec.datapass.datasupplier;
 
+import android.Manifest;
+import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.telephony.SubscriptionInfo;
+import android.telephony.SubscriptionManager;
+import android.telephony.TelephonyManager;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -12,22 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import android.Manifest;
-import android.content.Context;
-import android.content.pm.PackageManager;
-import android.os.Build;
-import android.support.v4.content.ContextCompat;
-import android.telephony.SubscriptionInfo;
-import android.telephony.SubscriptionManager;
-import android.telephony.TelephonyManager;
-
 /**
  * Class providing a static function to check which provider/carrier the users phone uses and return the correct
- * concrete DataSupplier if available.
- * <p>
- * This class also serves as the base class for every concrete DataSupplier. Thus, it offers the method
- * {@link #getData(Context)} to retrieve HTML content of a given website, whereas a concrete DataSupplier has to extract
- * the desired information from that data.
+ * concrete DataSupplier if available. This class also serves as the base class for every concrete DataSupplier.
+ * Thus, it offers the method {@link #getData(Context)} to retrieve HTML content of a given website, whereas a concrete
+ * DataSupplier has to extract the desired information from that data.
  *
  * @author Martin Hellwig
  * @author Markus Hettig
@@ -38,17 +35,17 @@ public abstract class DataSupplier
      * Finds the right parser for users carrier.
      *
      * @param context
-     *          the context
-     * @return
-     *          the right parser if available, DummyParser else
+     *         the context
+     *
+     * @return the right parser if available, DummyParser else
      */
     public static DataSupplier getProviderDataSupplier(Context context)
     {
         List<String> carrierNames = new ArrayList<>();
         //try to find out all carrier names (dualsim etc.)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1 && ContextCompat.
-                checkSelfPermission(context, Manifest.permission.READ_PHONE_STATE) ==
-                PackageManager.PERMISSION_GRANTED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1 &&
+                context.checkCallingOrSelfPermission(Manifest.permission.READ_PHONE_STATE) ==
+                        PackageManager.PERMISSION_GRANTED)
         {
             List<SubscriptionInfo> subscriptionInfos = SubscriptionManager.from(context).
                     getActiveSubscriptionInfoList();
@@ -59,12 +56,14 @@ public abstract class DataSupplier
         }
         else
         {
-            carrierNames.add(((TelephonyManager) context.getSystemService(
-                    Context.TELEPHONY_SERVICE)).getNetworkOperatorName());
+            carrierNames.add(((TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE))
+                    .getNetworkOperatorName());
         }
 
-        for (String carrier : carrierNames) {
-            switch (carrier) {
+        for (String carrier : carrierNames)
+        {
+            switch (carrier)
+            {
                 case "Telekom.de":
                     return new TelekomGermanyDataSupplier();
                 default:
@@ -81,9 +80,9 @@ public abstract class DataSupplier
      *         Application context.
      *
      * @return {@link ReturnCode#SUCCESS} if all data was gathered successfully, {@link ReturnCode#WASTED} if data was
-     * parsed successfully but the available traffic is used up (and no further info about former available traffic
-     * is given), {@link ReturnCode#ERROR} if an error occurred while gathering the data, and
-     * {@link ReturnCode#CARRIER_UNAVAILABLE} if the current carrier used by the phone is not supported.
+     * parsed successfully but the available traffic is used up (and no further info about former available traffic is
+     * given), {@link ReturnCode#ERROR} if an error occurred while gathering the data, and {@link
+     * ReturnCode#CARRIER_UNAVAILABLE} if the current carrier used by the phone is not supported.
      */
     public abstract ReturnCode getData(Context context);
 
@@ -91,7 +90,7 @@ public abstract class DataSupplier
      * "Connects" to the given URL, parses the content and returns it as a string.
      *
      * @param url
-     *          The URL to get the content from.
+     *         The URL to get the content from.
      *
      * @return Parsed content.
      *
@@ -159,8 +158,8 @@ public abstract class DataSupplier
     }
 
     /**
-     * @return The unit (MB or GB) of the used / available traffic. Always returns the unit of the available traffic
-     * if they differ, the unit of the used traffic should then get converted properly into the same unit.
+     * @return The unit (MB or GB) of the used / available traffic. Always returns the unit of the available traffic if
+     * they differ, the unit of the used traffic should then get converted properly into the same unit.
      */
     public abstract String getTrafficUnit();
 
