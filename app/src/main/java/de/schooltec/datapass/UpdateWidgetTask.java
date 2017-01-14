@@ -12,7 +12,6 @@ import android.graphics.RectF;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.util.Log;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.OvershootInterpolator;
@@ -48,6 +47,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
     private int arcColorId = R.color.arc_gray_dark;
     private boolean loadingFinished = false;
+    private boolean drawingInProgress = false;
 
     /**
      * Constructor.
@@ -97,7 +97,6 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 hint = "";
 
                 arcColorId = R.color.arc_blue;
-                loadingFinished = true;
 
                 // Store values
                 editor.putString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, trafficProportion);
@@ -118,7 +117,6 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 hint = context.getString(R.string.hint_volume_used_up);
 
                 arcColorId = R.color.arc_orange;
-                loadingFinished = true;
 
                 // Store values
                 editor.putString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, trafficProportion);
@@ -140,7 +138,6 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 hint = sharedPref.getString(PreferenceKeys.SAVED_HINT, "");
 
                 arcColorId = R.color.arc_gray_dark;
-                loadingFinished = true;
 
                 // Generate Toasts for user feedback if update failed
                 NetworkInfo activeNetworkInfo = ((ConnectivityManager) context
@@ -185,7 +182,6 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 hint = context.getString(R.string.hint_carrier_unsupported);
 
                 arcColorId = R.color.arc_gray_dark;
-                loadingFinished = true;
 
                 if (mode == Mode.REGULAR)
                 {
@@ -200,6 +196,8 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         {
             updateWidget(trafficWastedPercentage, trafficUnit, trafficProportion, lastUpdate, hint, true);
         }
+
+        loadingFinished = true;
     }
 
     /**
@@ -254,6 +252,8 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
         // Request for widget update
         AppWidgetManager.getInstance(context).updateAppWidget(appWidgetIds, remoteViews);
+
+        drawingInProgress = false;
     }
 
     /**
@@ -301,62 +301,69 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     /** AsyncTask showing a loading animation for the circular progress bar. */
     private class UpdateAnimationTask extends AsyncTask<Void, Integer, Void>
     {
-        private static final int ANIMATION_CLOCK_IN_MS = 10;
+        // Duration of one-half of the animation in milliseconds
+        private static final int ANIM_DURATION_HALF = 1000;
 
         // Use AccelerateDecelerateInterpolator to ensure a smooth transition between multiple full circle animations
         private final Interpolator forwardAnimInterpol = new AccelerateDecelerateInterpolator();
 
         // Use OvershootInterpolator to get a nice and slow backwards animation from full circle to target arc,
         // and use a low tension value for better fit of the blue progressbar when being at 360°
-        private final Interpolator backwardAnimInterpol = new OvershootInterpolator(0.3f);
+        private final Interpolator backwardAnimInterpol = new OvershootInterpolator(0.6f);
 
         @Override
         protected Void doInBackground(Void... voids)
         {
-            try
+            // Animate circle as long as needed (while animating at least one full circle)
+            while (true)
             {
-                int animationProgress;
-                int animationProgressInterpolated;
+                animateCircle(100, true); // Forward animation
 
-                // Animate circles as long as needed (while animating at least one full circle)
-                while (!loadingFinished)
-                {
-                    for (animationProgress = 0; animationProgress < 100; animationProgress++)
-                    {
-                        animationProgressInterpolated = Math
-                                .round(forwardAnimInterpol.getInterpolation(animationProgress / 100f) * 100f);
-                        publishProgress(animationProgressInterpolated);
-                        Thread.sleep(ANIMATION_CLOCK_IN_MS);
-                    }
-                }
+                if (loadingFinished) break; // Skip full backward animation if loading is finished
 
-                // Set both progresses to 100 (= 360°) so we can animate backwards from full circle to target arc
-                animationProgress = 100;
-                animationProgressInterpolated = 100;
-
-                while (animationProgressInterpolated > trafficWastedPercentage)
-                {
-                    animationProgress--;
-                    animationProgressInterpolated = Math
-                            .round(backwardAnimInterpol.getInterpolation(animationProgress / 100f) * 100f);
-                    publishProgress(animationProgressInterpolated);
-                    Thread.sleep(ANIMATION_CLOCK_IN_MS);
-                }
+                animateCircle(0, false); // Backwards animation
             }
-            catch (InterruptedException e)
-            {
-                Log.w("UpdateWidgetTask", "UpdateAnimationTask interrupted.", e);
-            }
+
+            animateCircle(trafficWastedPercentage, false); // Animate backwards to desired value
 
             return null;
         }
 
+        /**
+         * Animate circle to desired value.
+         *
+         * @param targetValue
+         *         Desired value to animate to in percent (e.g. '100' to animate to a full circle)
+         * @param forward
+         *         true: do forward animation; false: do backward animation
+         */
+        private void animateCircle(int targetValue, boolean forward)
+        {
+            long timeStart = System.currentTimeMillis();
+
+            while (true)
+            {
+                if (drawingInProgress) continue; // Avoid unnecessary drawing operations / overload
+
+                long timePassed = System.currentTimeMillis() - timeStart; // Time passed since last drawing
+
+                float result = forward ? timePassed : ANIM_DURATION_HALF - timePassed;
+                Interpolator usedInterpolator = forward ? forwardAnimInterpol : backwardAnimInterpol;
+                int resultInter = Math.round(usedInterpolator.getInterpolation(result / ANIM_DURATION_HALF) * 100f);
+
+                // End loop if animation target is reached
+                if ((forward && resultInter >= targetValue) || (!forward && resultInter <= targetValue)) break;
+
+                drawingInProgress = true;
+                publishProgress(resultInter);
+            }
+        }
+
         @Override
-        protected void onProgressUpdate(Integer... animationProgressInterpolated)
+        protected void onProgressUpdate(Integer... animProgressInterpolated)
         {
             // Update widget with interpolated progress value and set "loading..." text
-            updateWidget(animationProgressInterpolated[0], "", context.getString(R.string.update_loading), "", "",
-                    false);
+            updateWidget(animProgressInterpolated[0], "", context.getString(R.string.update_loading), "", "", false);
         }
 
         @Override
@@ -370,7 +377,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     /**
      * Enum for the possible update behaviors.
      */
-    public enum Mode
+    enum Mode
     {
         /** Normal update with animation and toasts. */
         REGULAR,
