@@ -38,6 +38,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     private Mode mode;
 
     private final DataSupplier dataSupplier;
+    private SharedPreferences sharedPref;
 
     private String trafficProportion;
     private String trafficUnit;
@@ -67,6 +68,8 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
         ConnectionChangeReceiver.registerReceiver(context);
 
+        sharedPref = context.getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_RESULT_DATA, Context.MODE_PRIVATE);
+
         // Start loading animation
         if (mode != Mode.ULTRA_SILENT)
         {
@@ -83,8 +86,6 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     @Override
     protected void onPostExecute(final ReturnCode returnCode)
     {
-        SharedPreferences sharedPref = context.getSharedPreferences(PreferenceKeys.
-                PREFERENCE_FILE_RESULT_DATA, Context.MODE_PRIVATE);
         SharedPreferences.Editor editor = sharedPref.edit();
 
         switch (returnCode)
@@ -311,45 +312,73 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         // and use a low tension value for better fit of the blue progressbar when being at 360°
         private final Interpolator backwardAnimInterpol = new OvershootInterpolator(0.6f);
 
+        /** Animate circle as long as needed (while animating at least one full circle). */
         @Override
         protected Void doInBackground(Void... voids)
         {
-            // Animate circle as long as needed (while animating at least one full circle)
-            while (true)
+            // Get old percentage value as starting point for the animation
+            trafficWastedPercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, 0);
+
+            animateCircle(trafficWastedPercentage, 100);
+
+            // Indeterminate animation if fetching data from homepage takes very long
+            while (!loadingFinished)
             {
-                animateCircle(100, true); // Forward animation
-
-                if (loadingFinished) break; // Skip full backward animation if loading is finished
-
-                animateCircle(0, false); // Backwards animation
+                animateCircle(100, 0); // Backwards animation
+                animateCircle(0, 100); // Forward animation
             }
 
-            animateCircle(trafficWastedPercentage, false); // Animate backwards to desired value
+            animateCircle(100, trafficWastedPercentage); // Animate backwards to desired value
 
             return null;
         }
 
         /**
-         * Animate circle to desired value.
+         * Animate the circular progress bar from a given start value to a given target value. Also takes the passed
+         * time into account! E.g. if the animation should run from 25% to 80% it won't just take 55% * {@value
+         * ANIM_DURATION_HALF}ms but the calculated period according to current selected interpolator.
          *
+         * @param startValue
+         *         Desired value in percent to start the animation from.
          * @param targetValue
-         *         Desired value to animate to in percent (e.g. '100' to animate to a full circle)
-         * @param forward
-         *         true: do forward animation; false: do backward animation
+         *         Desired value in percent to animate to (e.g. '100' to animate to a full circle)
          */
-        private void animateCircle(int targetValue, boolean forward)
+        private void animateCircle(int startValue, int targetValue)
         {
+            if (startValue == targetValue || startValue < 0 || targetValue > 100) return;
+            boolean forward = targetValue > startValue;
+
+            Interpolator interpolator = forward ? forwardAnimInterpol : backwardAnimInterpol;
+
+            // Find the correct interpolated timestamp / offset to the given startValue
+            int distance = Integer.MAX_VALUE;
+            int offset = 0;
+            for (int i = 0; i <= 100; i++)
+            {
+                int distanceNew = Math.abs(Math.round(interpolator.getInterpolation(i / 100f) * 100f) - startValue);
+                if (distanceNew < distance)
+                {
+                    distance = distanceNew;
+                    offset = i;
+                }
+            }
+
             long timeStart = System.currentTimeMillis();
+            int resultInterPrevious = -1; // Interpolated value of the previous iteration
 
             while (true)
             {
                 if (drawingInProgress) continue; // Avoid unnecessary drawing operations / overload
 
-                long timePassed = System.currentTimeMillis() - timeStart; // Time passed since last drawing
+                float timePassed = System.currentTimeMillis() - timeStart; // Time passed since last drawing
 
-                float result = forward ? timePassed : ANIM_DURATION_HALF - timePassed;
-                Interpolator usedInterpolator = forward ? forwardAnimInterpol : backwardAnimInterpol;
-                int resultInter = Math.round(usedInterpolator.getInterpolation(result / ANIM_DURATION_HALF) * 100f);
+                // Calculate current interpolated value
+                if (!forward) timePassed = -timePassed; // invert value to assure backwards animation
+                timePassed += (offset / 100f) * ANIM_DURATION_HALF; // add interpolated offset
+                int resultInter = Math.round(interpolator.getInterpolation(timePassed / ANIM_DURATION_HALF) * 100f);
+
+                if (resultInter == resultInterPrevious) continue; // Skip even more unnecessary drawing operations
+                resultInterPrevious = resultInter;
 
                 // End loop if animation target is reached
                 if ((forward && resultInter >= targetValue) || (!forward && resultInter <= targetValue)) break;
