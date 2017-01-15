@@ -1,10 +1,20 @@
 package de.schooltec.datapass;
 
+import android.Manifest;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.os.Build;
+import android.os.Handler;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.telephony.TelephonyManager;
+import android.util.Log;
 
+import java.security.Permission;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -20,46 +30,140 @@ import java.util.Set;
 public class WidgetAutoUpdateProvider extends AppWidgetProvider
 {
     @Override
-    public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] appWidgetIds)
+    public void onUpdate(final Context context, AppWidgetManager appWidgetManager,
+                         final int[] appWidgetIds)
     {
-        SharedPreferences sharedPref = context
-                .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
-
-        Set<String> currentAppIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS, new HashSet<String>());
-        for (int appId : appWidgetIds)
+        for (int appWidgetId : appWidgetIds)
         {
-            currentAppIds.add(String.valueOf(appId));
+            // delete the current widget from list if the widget was in the list, simply add it
+            // again afterwards with the same carrier again otherwise add the widget with the first
+            // carrier to find (or the identifier for requesting the user to select the carrier)
+            SharedPreferences sharedPref = context.getSharedPreferences(PreferenceKeys.
+                    PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
+
+            String oldCarrier = deleteEntryIfContained(context, appWidgetId);
+
+            Set<String> toStoreIds = sharedPref.getStringSet(PreferenceKeys.
+                            SAVED_APP_IDS, new HashSet<String>());
+
+            TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.
+                    TELEPHONY_SERVICE);
+
+            boolean alreadyContained = oldCarrier != null && !oldCarrier.equals("");
+            String carrier;
+
+            // only ask, if device is API 22 or otherwise (API 23 and up), if there are more
+            // than two sims; All devices with API lower than API 22 are not good supported for
+            // multi-sims
+            if ((!alreadyContained || oldCarrier.equals(UpdateWidgetTask.CARRIER_NOT_SELECTED)) &&
+                    (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP_MR1 ||
+                    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && manager.getPhoneCount() > 1)))
+            {
+                // The opening activity has to store the widgetId with the selected carrier
+                carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
+            }
+            else
+            {
+                // use the old set carrier for multi-sim widgets
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && manager.getPhoneCount() > 1)
+                {
+                    carrier = oldCarrier;
+                }
+                else
+                {
+                    // if the carrier of the phone has changed (or there is no carrier, because in
+                    // flight mode), use the new one, otherwise use the old one
+                    carrier = manager.getNetworkOperatorName();
+                    if (carrier == null || carrier.isEmpty()) carrier = oldCarrier;
+                }
+            }
+
+            // Add the one and only carrier to this widget
+            toStoreIds.add(String.valueOf(appWidgetId) + "," + carrier);
+
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putStringSet(PreferenceKeys.SAVED_APP_IDS, toStoreIds);
+            editor.apply();
+
+            UpdateWidgetTask.Mode mode = alreadyContained ? UpdateWidgetTask.Mode.SILENT :
+                    UpdateWidgetTask.Mode.REGULAR;
+
+            new UpdateWidgetTask(appWidgetId, context, mode, carrier).execute();
+        }
+    }
+
+    /**
+     * Deletes all entries in the current widget list, where the toDeleteWidgetIds matches. Also
+     * returns the carrier of the deleted entry.
+     * @param context
+     *          the context
+     * @param toDeleteWidgetId
+     *          the widgetId to delete
+     * @return
+     *          the carrier of the probably deleted widget, otherwise an empty String
+     */
+    public static String deleteEntryIfContained(Context context, int toDeleteWidgetId)
+    {
+        Set<String> newWidgetIds = new HashSet<>();
+        String oldCarrier = "";
+        SharedPreferences sharedPref = context.getSharedPreferences(PreferenceKeys
+                .PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
+
+        Set<String> toStoreWidgetIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS, new
+                HashSet<String>());
+
+        for (String currentAppIdWithCarrier : toStoreWidgetIds)
+        {
+            if (Integer.valueOf(currentAppIdWithCarrier.substring(0, currentAppIdWithCarrier.
+                        indexOf(","))) == toDeleteWidgetId)
+            {
+                oldCarrier = currentAppIdWithCarrier.substring(currentAppIdWithCarrier.indexOf(",")
+                        + 1);
+            }
+            else {
+                newWidgetIds.add(currentAppIdWithCarrier);
+            }
         }
 
         SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putStringSet(PreferenceKeys.SAVED_APP_IDS, currentAppIds);
+        editor.putStringSet(PreferenceKeys.SAVED_APP_IDS, newWidgetIds);
         editor.apply();
 
-        new UpdateWidgetTask(appWidgetIds, context, UpdateWidgetTask.Mode.SILENT).execute();
+        return oldCarrier;
+    }
+
+    /**
+     * Saves the new widget data in shared preferences.
+     * @param context
+     *          the context
+     * @param appWidgetId
+     *          the id of this widget
+     * @param carrier
+     *          the carrier of this widget
+     */
+    public static void addEntry(Context context, int appWidgetId, String carrier)
+    {
+        SharedPreferences sharedPref = context.getSharedPreferences(PreferenceKeys
+                .PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
+
+        Set<String> toStoreWidgetIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS, new
+                HashSet<String>());
+
+        // Add the one and only carrier to this widget
+        toStoreWidgetIds.add(String.valueOf(appWidgetId) + "," + carrier);
+
+        SharedPreferences.Editor editor = sharedPref.edit();
+        editor.putStringSet(PreferenceKeys.SAVED_APP_IDS, toStoreWidgetIds);
+        editor.apply();
     }
 
     @Override
     public void onDeleted(Context context, int[] appWidgetIds)
     {
-        SharedPreferences sharedPref = context
-                .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
-
-        Set<String> toStoreIds = new HashSet<>();
-        Set<String> currentAppIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS, new HashSet<String>());
-        for (String currentAppId : currentAppIds)
+        for (int appWidgetId : appWidgetIds)
         {
-            for (int toDeleteAppId : appWidgetIds)
-            {
-                if (Integer.valueOf(currentAppId) == toDeleteAppId)
-                {
-                    toStoreIds.add(currentAppId);
-                }
-            }
+            deleteEntryIfContained(context, appWidgetId);
         }
-
-        SharedPreferences.Editor editor = sharedPref.edit();
-        editor.putStringSet(PreferenceKeys.SAVED_APP_IDS, toStoreIds);
-        editor.apply();
 
         super.onDeleted(context, appWidgetIds);
     }

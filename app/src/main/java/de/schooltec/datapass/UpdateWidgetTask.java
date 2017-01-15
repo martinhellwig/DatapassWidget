@@ -12,6 +12,7 @@ import android.graphics.RectF;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Handler;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.OvershootInterpolator;
@@ -28,12 +29,21 @@ import static de.schooltec.datapass.datasupplier.DataSupplier.ReturnCode;
  * @author Martin Hellwig
  * @author Markus Hettig
  */
-class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
+public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 {
-    // Intent extra to transfer ID's of app widgets which should be affected by a specific UpdateWidgetTask instance
-    static final String APP_WIDGET_IDS = "INTENT_EXTRA_APP_WIDGET_IDS";
+    // Intent extra to transfer ID's of app widgets which should be affected by a specific
+    // UpdateWidgetTask instance
+    static final String APP_WIDGET_ID = "INTENT_EXTRA_APP_WIDGET_ID";
 
-    private final int[] appWidgetIds;
+    // intent extra to transfer the user selected carrier
+    static final String APP_WIDGET_CARRIER = "INTENT_EXTRA_APP_WIDGET_CARRIER";
+
+    // This carrier means, that the user has to further actions, because of DualSim to choose
+    // its carrier
+    public static final String CARRIER_NOT_SELECTED = "CARRIER_NOT_SELECTED";
+
+    private final int appWidgetId;
+    private final String carrier;
     private final Context context;
     private Mode mode;
 
@@ -53,18 +63,23 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     /**
      * Constructor.
      *
+     * @param appWidgetId
+     *          The ID of this widget
      * @param context
      *         The current context.
      * @param mode
      *         Indicates if the widget update is done silent (from receiver), manually (by button press) or ultra silent
      *         (on wifi / mobile data state change).
+     * @param selectedCarrier
+     *         user has selected one carrier for this widget, which should be used
      */
-    UpdateWidgetTask(int[] appWidgetIds, Context context, Mode mode)
+    UpdateWidgetTask(int appWidgetId, Context context, Mode mode, String selectedCarrier)
     {
-        this.appWidgetIds = appWidgetIds;
+        this.appWidgetId = appWidgetId;
+        this.carrier = selectedCarrier;
         this.context = context;
         this.mode = mode;
-        dataSupplier = DataSupplier.getProviderDataSupplier(context);
+        dataSupplier = DataSupplier.getProviderDataSupplier(selectedCarrier);
 
         ConnectionChangeReceiver.registerReceiver(context);
 
@@ -146,27 +161,23 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
                 if (activeNetworkInfo != null)
                 {
-                    switch (activeNetworkInfo.getType())
+                    if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
+                        // Connected to WiFi
+                        if (mode == Mode.REGULAR) {
+                            Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
+                        }
+                        if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_turn_off_wifi);
+                        break;
+                    }
+                    else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
                     {
-                        case ConnectivityManager.TYPE_WIFI:
-                            // Connected to WiFi
-                            if (mode == Mode.REGULAR)
-                            {
-                                Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
-                            }
-                            if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_turn_off_wifi);
-
-                            break;
-
-                        case ConnectivityManager.TYPE_MOBILE:
-                            // Connected to Mobile Data but update fails nevertheless
-                            if (mode == Mode.REGULAR)
-                            {
-                                Toast.makeText(context, R.string.update_fail, Toast.LENGTH_LONG).show();
-                            }
-                            if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_update_fail);
-
-                            break;
+                        // Connected to Mobile Data but update fails nevertheless
+                        if (mode == Mode.REGULAR)
+                        {
+                            Toast.makeText(context, R.string.update_fail, Toast.LENGTH_LONG).show();
+                        }
+                        if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_update_fail);
+                        break;
                     }
                 }
 
@@ -186,7 +197,25 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
                 if (mode == Mode.REGULAR)
                 {
-                    Toast.makeText(context, R.string.update_fail_unsupported_carrier, Toast.LENGTH_LONG).show();
+                    Toast.makeText(context, R.string.update_fail_unsupported_carrier,
+                            Toast.LENGTH_LONG).show();
+                }
+
+                break;
+            case CARRIER_NOT_SELECTED:
+                trafficProportion = "";
+                trafficUnit = "";
+                trafficWastedPercentage = 0;
+                lastUpdate = "";
+                hint = context.getString(R.string.hint_carrier_not_selected);
+
+                arcColorId = R.color.arc_gray_dark;
+                loadingFinished = true;
+
+                if (mode == Mode.REGULAR)
+                {
+                    Toast.makeText(context, R.string.update_fail_carrier_not_selected,
+                            Toast.LENGTH_LONG).show();
                 }
 
                 break;
@@ -235,9 +264,23 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
             // simultaneous WidgetUpdates. If the requestCode will be the same, the clickEvent will
             // only trigger one of the placed widgets
             Intent intent = new Intent(context, WidgetIntentReceiver.class);
-            intent.putExtra(APP_WIDGET_IDS, appWidgetIds);
-            remoteViews.setOnClickPendingIntent(R.id.mainLayout,
-                    PendingIntent.getBroadcast(context, appWidgetIds[0], intent, PendingIntent.FLAG_UPDATE_CURRENT));
+            intent.putExtra(APP_WIDGET_ID, appWidgetId);
+            intent.putExtra(APP_WIDGET_CARRIER, carrier);
+            remoteViews.setOnClickPendingIntent(R.id.mainLayout, PendingIntent.getBroadcast(context,
+                    appWidgetId, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+
+            // Start Activity to get permission and set carrier for this widget
+            if (carrier.equals(CARRIER_NOT_SELECTED) && mode == Mode.REGULAR)
+            {
+                (new Handler()).postDelayed(new Runnable() {
+                    @Override
+                    public void run() {
+                        Intent intent = new Intent(UpdateWidgetTask.this.context, RequestPermissionActivity.class);
+                        intent.putExtra(APP_WIDGET_ID, UpdateWidgetTask.this.appWidgetId);
+                        UpdateWidgetTask.this.context.startActivity(intent);
+                    }
+                }, 500);
+            }
         }
         else
         {
@@ -252,7 +295,7 @@ class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         remoteViews.setTextViewText(R.id.tv_hint, hint);
 
         // Request for widget update
-        AppWidgetManager.getInstance(context).updateAppWidget(appWidgetIds, remoteViews);
+        AppWidgetManager.getInstance(context).updateAppWidget(new int[] {appWidgetId}, remoteViews);
 
         drawingInProgress = false;
     }

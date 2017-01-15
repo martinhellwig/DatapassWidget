@@ -102,6 +102,11 @@ class TelekomGermanyDataSupplier extends DataSupplier
     }
 
     @Override
+    public boolean isRealDataSupplier() {
+        return true;
+    }
+
+    @Override
     public String getTrafficWasted()
     {
         return formatTrafficValues(trafficWasted, trafficWastedUnit);

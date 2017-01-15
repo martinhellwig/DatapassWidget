@@ -5,6 +5,7 @@
     <string name="update_fail_wifi">Aktualisierung nicht möglich. Bitte WiFi deaktivieren</string>
     <string name="update_fail_con">Aktualisierung nicht möglich. Bitte mobile Daten aktivieren</string>
     <string name="update_fail_unsupported_carrier">Dein Anbieter wird derzeit noch nicht unterstützt</string>
+    <string name="update_fail_carrier_not_selected">Du hast noch keinen Anbieter für dieses Widget gewählt</string>
     <string name="update_successful">Erfolgreich aktualisiert</string>
     <string name="update_wasted">Mobiles Datenvolumen aufgebraucht</string>
     <string name="update_loading">Lade…</string>
@@ -14,8 +15,11 @@
     <string name="hint_update_fail">Update\nnicht\nmöglich</string>
     <string name="hint_volume_used_up">Volumen\nverbraucht</string>
     <string name="hint_carrier_unsupported">Anbieter\nnicht\nunterstützt</string>
+    <string name="hint_carrier_not_selected">Anbieter\nnicht\ngewählt</string>
 
     <string name="quick_settings_tile_label">Datenverbrauch</string>
     <string name="quick_settings_tile_updating">Aktualisiere…</string>
     <string name="quick_settings_tile_error">Fehler, siehe Toast!</string>
+    <string name="dialogue_select_carrier">Wähle deinen Anbieter</string>
+    <string name="dialogue_cancel">Abbrechen</string>
 </resources>

@@ -21,7 +21,7 @@ import java.util.Set;
  */
 public class ConnectionChangeReceiver extends BroadcastReceiver
 {
-    private final static long MIN_TIME_BETWEEN_TWO_REQUESTS = 30000;
+    private final static long MIN_TIME_BETWEEN_TWO_REQUESTS = 5000;
 
     private static boolean alreadyRegistered;
     private static long lastChangeEventTimeStamp;
@@ -56,17 +56,22 @@ public class ConnectionChangeReceiver extends BroadcastReceiver
             UpdateWidgetTask.Mode updateMode = UpdateWidgetTask.Mode.ULTRA_SILENT;
             if (activeInfo != null && activeInfo.getType() == ConnectivityManager.TYPE_MOBILE)
             {
-            /*
-            Only update in silent mode if switched to mobile data. Otherwise you are probably in wifi mode, ergo there
-            is no new information about the used data and therefore grayish the progress bar.
-             */
+                /*
+                Only update in silent mode if switched to mobile data. Otherwise you are probably
+                in wifi mode, ergo there is no new information about the used data and therefore
+                grayish the progress bar.
+                 */
                 updateMode = UpdateWidgetTask.Mode.SILENT;
             }
 
             // make new task for every widget
             for (String storedAppId : storedAppIds)
             {
-                new UpdateWidgetTask(new int[]{Integer.valueOf(storedAppId)}, context, updateMode)
+                int appWidgetId = Integer.valueOf(storedAppId.substring(0, storedAppId.
+                        indexOf(",")));
+                String carrier = storedAppId.substring(storedAppId.indexOf(",") + 1);
+
+                new UpdateWidgetTask(appWidgetId, context, updateMode, carrier)
                         .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
             }
         }

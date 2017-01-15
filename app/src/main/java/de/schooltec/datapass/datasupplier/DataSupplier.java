@@ -16,9 +16,9 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
+
+import de.schooltec.datapass.UpdateWidgetTask;
 
 /**
  * Class providing a static function to check which provider/carrier the users phone uses and return the correct
@@ -31,45 +31,24 @@ import java.util.Locale;
  */
 public abstract class DataSupplier
 {
+
     /**
      * Finds the right parser for users carrier.
      *
-     * @param context
-     *         the context
-     *
-     * @return the right parser if available, DummyParser else
+     * @param selectedCarrier
+     *          the carrier for thhis widget
+     * @return
+     *          the right parser if available, DummyParser else
      */
-    public static DataSupplier getProviderDataSupplier(Context context)
+    public static DataSupplier getProviderDataSupplier(String selectedCarrier)
     {
-        List<String> carrierNames = new ArrayList<>();
-        //try to find out all carrier names (dualsim etc.)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1 &&
-                context.checkCallingOrSelfPermission(Manifest.permission.READ_PHONE_STATE) ==
-                        PackageManager.PERMISSION_GRANTED)
-        {
-            List<SubscriptionInfo> subscriptionInfos = SubscriptionManager.from(context).
-                    getActiveSubscriptionInfoList();
-            for (SubscriptionInfo subscriptionInfo : subscriptionInfos)
-            {
-                carrierNames.add(subscriptionInfo.getCarrierName().toString());
-            }
+        switch (selectedCarrier) {
+            case "Telekom.de":
+                return new TelekomGermanyDataSupplier();
+            case UpdateWidgetTask.CARRIER_NOT_SELECTED:
+                return new CarrierNotSelectedSupplier();
+            default:
         }
-        else
-        {
-            carrierNames.add(((TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE))
-                    .getNetworkOperatorName());
-        }
-
-        for (String carrier : carrierNames)
-        {
-            switch (carrier)
-            {
-                case "Telekom.de":
-                    return new TelekomGermanyDataSupplier();
-                default:
-            }
-        }
-
         return new DummyDataSupplier();
     }
 
@@ -131,6 +110,13 @@ public abstract class DataSupplier
     }
 
     /**
+     * Says, if this data provider is a real supplier (not dummy or something else).
+     * @return
+     *      true, if this is a real data supplier
+     */
+    public abstract boolean isRealDataSupplier();
+
+    /**
      * @return The traffic already used/wasted by the user (e.g. 125MB from 500MB totally available).
      */
     public abstract String getTrafficWasted();
@@ -188,6 +174,9 @@ public abstract class DataSupplier
         ERROR,
 
         /** Users carrier is not available. */
-        CARRIER_UNAVAILABLE;
+        CARRIER_UNAVAILABLE,
+
+        /** Carrier is not selected. */
+        CARRIER_NOT_SELECTED;
     }
 }

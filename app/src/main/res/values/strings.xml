@@ -7,6 +7,7 @@
     <string name="update_fail_wifi">Can\'t update data. Please turn off WiFi</string>
     <string name="update_fail_con">Can\'t update data. Please turn on mobile Data</string>
     <string name="update_fail_unsupported_carrier">Your carrier is not supported at the moment</string>
+    <string name="update_fail_carrier_not_selected">You didn\'t chose a carrier for this widget</string>
     <string name="update_successful">Successfully updated</string>
     <string name="update_wasted">Mobile data volume used up</string>
     <string name="update_loading">Loading…</string>
@@ -16,8 +17,11 @@
     <string name="hint_update_fail">Update\nnot\npossible</string>
     <string name="hint_volume_used_up">Data\nvolume\nused up</string>
     <string name="hint_carrier_unsupported">Carrier\nnot\nsupported</string>
+    <string name="hint_carrier_not_selected">Carrier\nnot\nselected</string>
 
     <string name="quick_settings_tile_label">Data usage</string>
     <string name="quick_settings_tile_updating">Updating…</string>
     <string name="quick_settings_tile_error">Error, see toast!</string>
+    <string name="dialogue_select_carrier">Select your carrier</string>
+    <string name="dialogue_cancel">Cancel</string>
 </resources>

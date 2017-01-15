@@ -3,16 +3,16 @@ package de.schooltec.datapass.datasupplier;
 import android.content.Context;
 
 /**
- * DummyDataSupplier which simply says that it can't retrieve any data.
+ * Supplier which simply says that the carrier is not selected by the user atm.
  *
  * @author Martin Hellwig
  */
-class DummyDataSupplier extends DataSupplier
+class CarrierNotSelectedSupplier extends DataSupplier
 {
     @Override
     public ReturnCode getData(Context context)
     {
-        return ReturnCode.CARRIER_UNAVAILABLE;
+        return ReturnCode.CARRIER_NOT_SELECTED;
     }
 
     @Override
