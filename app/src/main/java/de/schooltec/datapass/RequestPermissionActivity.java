@@ -43,7 +43,10 @@ public class RequestPermissionActivity extends Activity
 
             // if permission is already granted, simply ask for selecting a carrier
             if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) ==
-                    PackageManager.PERMISSION_GRANTED)
+                    PackageManager.PERMISSION_GRANTED || Build.VERSION.SDK_INT <=
+                    Build.VERSION_CODES.LOLLIPOP_MR1 || (Build.VERSION.SDK_INT >=
+                    Build.VERSION_CODES.M && ((TelephonyManager) getSystemService(Context.
+                    TELEPHONY_SERVICE)).getPhoneCount() <= 1))
             {
                 showSelectCarrierDialog();
             }
@@ -70,11 +73,14 @@ public class RequestPermissionActivity extends Activity
             //first delete all entries in saved data for this widgetId
             WidgetAutoUpdateProvider.deleteEntryIfContained(this, appWidgetId);
 
-            // save the widget with its first carrier
-            WidgetAutoUpdateProvider.addEntry(this, appWidgetId, manager.getNetworkOperatorName());
+            String carrier = manager.getNetworkOperatorName();
+            if (carrier.equals("")) carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
 
-            new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.REGULAR,
-                    manager.getNetworkOperatorName()).execute();
+            // save the widget with its first carrier
+            WidgetAutoUpdateProvider.addEntry(this, appWidgetId, carrier);
+
+            new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.REGULAR, carrier)
+                    .execute();
 
             finish();
         }
@@ -112,9 +118,12 @@ public class RequestPermissionActivity extends Activity
                 // save the widget with its carrier
                 String carrier = ((TelephonyManager)
                         getSystemService(Context.TELEPHONY_SERVICE)).getNetworkOperatorName();
+
+                if (carrier.equals("")) carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
+
                 WidgetAutoUpdateProvider.addEntry(this, appWidgetId, carrier);
 
-                new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.REGULAR,
+                new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.SILENT,
                         carrier).execute();
 
                 finish();
@@ -126,7 +135,7 @@ public class RequestPermissionActivity extends Activity
                 WidgetAutoUpdateProvider.addEntry(this, appWidgetId, supportedCarriers.get(0)
                         .getCarrierName().toString());
 
-                new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.REGULAR,
+                new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.SILENT,
                         supportedCarriers.get(0).getCarrierName().toString()).execute();
 
                 finish();
@@ -159,7 +168,7 @@ public class RequestPermissionActivity extends Activity
                                 UpdateWidgetTask.CARRIER_NOT_SELECTED);
 
                         new UpdateWidgetTask(appWidgetId, RequestPermissionActivity.this,
-                                UpdateWidgetTask.Mode.REGULAR, UpdateWidgetTask
+                                UpdateWidgetTask.Mode.SILENT, UpdateWidgetTask
                                 .CARRIER_NOT_SELECTED).execute();
 
                         dialog.dismiss();

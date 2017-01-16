@@ -78,6 +78,10 @@ public class WidgetAutoUpdateProvider extends AppWidgetProvider
                 }
             }
 
+            // If there is no carrier (because in flight mode and there also was no stored
+            // oldCarrier), use the CARRIER_NOT_SELECTED
+            //if (carrier.equals("")) carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
+
             // Add the one and only carrier to this widget
             toStoreIds.add(String.valueOf(appWidgetId) + "," + carrier);
 
