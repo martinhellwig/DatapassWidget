@@ -41,19 +41,41 @@ public class RequestPermissionActivity extends Activity
         if (getIntent().hasExtra(UpdateWidgetTask.APP_WIDGET_ID)) {
             appWidgetId = getIntent().getIntExtra(UpdateWidgetTask.APP_WIDGET_ID, -1);
 
-            // if permission is already granted, simply ask for selecting a carrier
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) ==
-                    PackageManager.PERMISSION_GRANTED || Build.VERSION.SDK_INT <=
-                    Build.VERSION_CODES.LOLLIPOP_MR1 || (Build.VERSION.SDK_INT >=
-                    Build.VERSION_CODES.M && ((TelephonyManager) getSystemService(Context.
-                    TELEPHONY_SERVICE)).getPhoneCount() <= 1))
+            // If SingleSim, go here
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1 ||
+                    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && ((TelephonyManager)
+                            getSystemService(Context.TELEPHONY_SERVICE)).getPhoneCount() <= 1))
             {
-                showSelectCarrierDialog();
+                //first delete all entries in saved data for this widgetId
+                WidgetAutoUpdateProvider.deleteEntryIfContained(this, appWidgetId);
+
+                // save the widget with its carrier
+                String carrier = ((TelephonyManager)
+                        getSystemService(Context.TELEPHONY_SERVICE)).getNetworkOperatorName();
+
+                if (carrier.equals("")) carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
+
+                WidgetAutoUpdateProvider.addEntry(this, appWidgetId, carrier);
+
+                new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.SILENT,
+                        carrier).execute();
+
+                finish();
             }
-            else {
-                // let user select carrier, if permission already available
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.
-                        READ_PHONE_STATE}, 0);
+            else
+            {
+                // if permission is already granted, simply ask for selecting a carrier
+                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) ==
+                        PackageManager.PERMISSION_GRANTED)
+                {
+                    showSelectCarrierDialog();
+                }
+                else
+                {
+                    // let user select carrier, if permission already available
+                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.
+                            READ_PHONE_STATE}, 0);
+                }
             }
         }
     }

@@ -13,6 +13,7 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Handler;
+import android.telephony.TelephonyManager;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.OvershootInterpolator;
@@ -203,19 +204,36 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
                 break;
             case CARRIER_NOT_SELECTED:
+                String firstCarrier = ((TelephonyManager) context.getSystemService(Context
+                        .TELEPHONY_SERVICE)).getNetworkOperatorName();
+
                 trafficProportion = "";
                 trafficUnit = "";
                 trafficWastedPercentage = 0;
                 lastUpdate = "";
-                hint = context.getString(R.string.hint_carrier_not_selected);
+                if (firstCarrier.isEmpty())
+                {
+                    hint = context.getString(R.string.hint_turn_on_mobile_data);
+                }
+                else
+                {
+                    hint = context.getString(R.string.hint_carrier_not_selected);
+                }
 
                 arcColorId = R.color.arc_gray_dark;
                 loadingFinished = true;
 
                 if (mode == Mode.REGULAR)
                 {
-                    Toast.makeText(context, R.string.update_fail_carrier_not_selected,
-                            Toast.LENGTH_LONG).show();
+                    if (firstCarrier.isEmpty())
+                    {
+                        Toast.makeText(context, R.string.update_fail_con, Toast.LENGTH_LONG).show();
+                    }
+                    else
+                    {
+                        Toast.makeText(context, R.string.update_fail_carrier_not_selected,
+                                Toast.LENGTH_LONG).show();
+                    }
                 }
 
                 break;
