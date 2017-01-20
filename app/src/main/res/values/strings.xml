@@ -7,7 +7,7 @@
     <string name="update_fail_wifi">Can\'t update data. Please turn off WiFi</string>
     <string name="update_fail_con">Can\'t update data. Please turn on mobile Data</string>
     <string name="update_fail_unsupported_carrier">Your carrier is not supported at the moment</string>
-    <string name="update_fail_carrier_not_selected">You didn\'t chose a carrier for this widget</string>
+    <string name="update_fail_carrier_not_selected">Please chose a carrier for this widget</string>
     <string name="update_successful">Successfully updated</string>
     <string name="update_wasted">Mobile data volume used up</string>
     <string name="update_loading">Loading…</string>

@@ -221,7 +221,6 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 }
 
                 arcColorId = R.color.arc_gray_dark;
-                loadingFinished = true;
 
                 if (mode == Mode.REGULAR)
                 {

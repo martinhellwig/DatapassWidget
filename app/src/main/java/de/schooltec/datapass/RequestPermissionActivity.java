@@ -1,17 +1,15 @@
 package de.schooltec.datapass;
 
 import android.Manifest;
+import android.annotation.TargetApi;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
-import android.support.annotation.RequiresApi;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -19,18 +17,15 @@ import android.view.Window;
 import android.widget.ArrayAdapter;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import de.schooltec.datapass.datasupplier.DataSupplier;
 
 public class RequestPermissionActivity extends Activity
 {
-
     private int appWidgetId;
 
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP_MR1)
+    @TargetApi(Build.VERSION_CODES.M)
     @Override
     protected void onCreate(Bundle savedInstanceState)
     {
@@ -58,14 +53,14 @@ public class RequestPermissionActivity extends Activity
                 WidgetAutoUpdateProvider.addEntry(this, appWidgetId, carrier);
 
                 new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.SILENT,
-                        carrier).execute();
+                        carrier).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
                 finish();
             }
             else
             {
                 // if permission is already granted, simply ask for selecting a carrier
-                if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) ==
+                if (checkCallingOrSelfPermission(Manifest.permission.READ_PHONE_STATE) ==
                         PackageManager.PERMISSION_GRANTED)
                 {
                     showSelectCarrierDialog();
@@ -73,8 +68,7 @@ public class RequestPermissionActivity extends Activity
                 else
                 {
                     // let user select carrier, if permission already available
-                    ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.
-                            READ_PHONE_STATE}, 0);
+                    requestPermissions(new String[]{Manifest.permission.READ_PHONE_STATE}, 0);
                 }
             }
         }
@@ -84,9 +78,8 @@ public class RequestPermissionActivity extends Activity
     public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults)
     {
         TelephonyManager manager = (TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1 && ContextCompat.
-                checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE) ==
-                PackageManager.PERMISSION_GRANTED)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP_MR1 &&
+                checkCallingOrSelfPermission(Manifest.permission.READ_PHONE_STATE) == PackageManager.PERMISSION_GRANTED)
         {
             showSelectCarrierDialog();
         }
@@ -102,7 +95,7 @@ public class RequestPermissionActivity extends Activity
             WidgetAutoUpdateProvider.addEntry(this, appWidgetId, carrier);
 
             new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.REGULAR, carrier)
-                    .execute();
+                    .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
             finish();
         }
@@ -111,7 +104,7 @@ public class RequestPermissionActivity extends Activity
     /**
      * Shows a dialog to select the carrier, if there is more than 1 supported carrier.
      */
-    @RequiresApi(api = Build.VERSION_CODES.LOLLIPOP_MR1)
+    @TargetApi(Build.VERSION_CODES.LOLLIPOP_MR1)
     private void showSelectCarrierDialog()
     {
         List<SubscriptionInfo> subscriptionInfos = SubscriptionManager.from(this).
@@ -146,7 +139,7 @@ public class RequestPermissionActivity extends Activity
                 WidgetAutoUpdateProvider.addEntry(this, appWidgetId, carrier);
 
                 new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.SILENT,
-                        carrier).execute();
+                        carrier).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
                 finish();
                 break;
@@ -158,7 +151,8 @@ public class RequestPermissionActivity extends Activity
                         .getCarrierName().toString());
 
                 new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.SILENT,
-                        supportedCarriers.get(0).getCarrierName().toString()).execute();
+                        supportedCarriers.get(0).getCarrierName().toString())
+                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
                 finish();
                 break;
@@ -191,7 +185,7 @@ public class RequestPermissionActivity extends Activity
 
                         new UpdateWidgetTask(appWidgetId, RequestPermissionActivity.this,
                                 UpdateWidgetTask.Mode.SILENT, UpdateWidgetTask
-                                .CARRIER_NOT_SELECTED).execute();
+                                .CARRIER_NOT_SELECTED).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
                         dialog.dismiss();
                         finish();
@@ -212,7 +206,8 @@ public class RequestPermissionActivity extends Activity
                                 selectedCarrier);
 
                         new UpdateWidgetTask(appWidgetId, RequestPermissionActivity.this,
-                                UpdateWidgetTask.Mode.REGULAR, selectedCarrier).execute();
+                                UpdateWidgetTask.Mode.REGULAR, selectedCarrier)
+                                .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
                         finish();
                     }

@@ -1,20 +1,13 @@
 package de.schooltec.datapass;
 
-import android.Manifest;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Build;
-import android.os.Handler;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.content.ContextCompat;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 
-import java.security.Permission;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -80,7 +73,7 @@ public class WidgetAutoUpdateProvider extends AppWidgetProvider
 
             // If there is no carrier (because in flight mode and there also was no stored
             // oldCarrier), use the CARRIER_NOT_SELECTED
-            if (carrier.equals("")) carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
+            if ("".equals(carrier)) carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
 
             // Add the one and only carrier to this widget
             toStoreIds.add(String.valueOf(appWidgetId) + "," + carrier);
@@ -92,7 +85,7 @@ public class WidgetAutoUpdateProvider extends AppWidgetProvider
             UpdateWidgetTask.Mode mode = alreadyContained ? UpdateWidgetTask.Mode.SILENT :
                     UpdateWidgetTask.Mode.REGULAR;
 
-            new UpdateWidgetTask(appWidgetId, context, mode, carrier).execute();
+            new UpdateWidgetTask(appWidgetId, context, mode, carrier).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
     }
 
