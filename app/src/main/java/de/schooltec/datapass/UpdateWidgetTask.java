@@ -65,7 +65,7 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
      * Constructor.
      *
      * @param appWidgetId
-     *          The ID of this widget
+     *         The ID of this widget
      * @param context
      *         The current context.
      * @param mode
@@ -162,9 +162,11 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
                 if (activeNetworkInfo != null)
                 {
-                    if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
+                    if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI)
+                    {
                         // Connected to WiFi
-                        if (mode == Mode.REGULAR) {
+                        if (mode == Mode.REGULAR)
+                        {
                             Toast.makeText(context, R.string.update_fail_wifi, Toast.LENGTH_LONG).show();
                         }
                         if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_turn_off_wifi);
@@ -198,14 +200,13 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
                 if (mode == Mode.REGULAR)
                 {
-                    Toast.makeText(context, R.string.update_fail_unsupported_carrier,
-                            Toast.LENGTH_LONG).show();
+                    Toast.makeText(context, R.string.update_fail_unsupported_carrier, Toast.LENGTH_LONG).show();
                 }
 
                 break;
             case CARRIER_NOT_SELECTED:
-                String firstCarrier = ((TelephonyManager) context.getSystemService(Context
-                        .TELEPHONY_SERVICE)).getNetworkOperatorName();
+                String firstCarrier = ((TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE))
+                        .getNetworkOperatorName();
 
                 trafficProportion = "";
                 trafficUnit = "";
@@ -230,8 +231,7 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                     }
                     else
                     {
-                        Toast.makeText(context, R.string.update_fail_carrier_not_selected,
-                                Toast.LENGTH_LONG).show();
+                        Toast.makeText(context, R.string.update_fail_carrier_not_selected, Toast.LENGTH_LONG).show();
                     }
                 }
 
@@ -283,15 +283,17 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
             Intent intent = new Intent(context, WidgetIntentReceiver.class);
             intent.putExtra(APP_WIDGET_ID, appWidgetId);
             intent.putExtra(APP_WIDGET_CARRIER, carrier);
-            remoteViews.setOnClickPendingIntent(R.id.mainLayout, PendingIntent.getBroadcast(context,
-                    appWidgetId, intent, PendingIntent.FLAG_UPDATE_CURRENT));
+            remoteViews.setOnClickPendingIntent(R.id.mainLayout,
+                    PendingIntent.getBroadcast(context, appWidgetId, intent, PendingIntent.FLAG_UPDATE_CURRENT));
 
             // Start Activity to get permission and set carrier for this widget
             if (carrier.equals(CARRIER_NOT_SELECTED) && mode == Mode.REGULAR)
             {
-                (new Handler()).postDelayed(new Runnable() {
+                (new Handler()).postDelayed(new Runnable()
+                {
                     @Override
-                    public void run() {
+                    public void run()
+                    {
                         Intent intent = new Intent(UpdateWidgetTask.this.context, RequestPermissionActivity.class);
                         intent.putExtra(APP_WIDGET_ID, UpdateWidgetTask.this.appWidgetId);
                         UpdateWidgetTask.this.context.startActivity(intent);
@@ -312,7 +314,7 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         remoteViews.setTextViewText(R.id.tv_hint, hint);
 
         // Request for widget update
-        AppWidgetManager.getInstance(context).updateAppWidget(new int[] {appWidgetId}, remoteViews);
+        AppWidgetManager.getInstance(context).updateAppWidget(new int[]{appWidgetId}, remoteViews);
 
         drawingInProgress = false;
     }

@@ -102,7 +102,8 @@ class TelekomGermanyDataSupplier extends DataSupplier
     }
 
     @Override
-    public boolean isRealDataSupplier() {
+    public boolean isRealDataSupplier()
+    {
         return true;
     }
 

@@ -33,27 +33,28 @@ public class RequestPermissionActivity extends Activity
 
         requestWindowFeature(Window.FEATURE_NO_TITLE);
 
-        if (getIntent().hasExtra(UpdateWidgetTask.APP_WIDGET_ID)) {
+        if (getIntent().hasExtra(UpdateWidgetTask.APP_WIDGET_ID))
+        {
             appWidgetId = getIntent().getIntExtra(UpdateWidgetTask.APP_WIDGET_ID, -1);
 
             // If SingleSim, go here
             if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.LOLLIPOP_MR1 ||
-                    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && ((TelephonyManager)
-                            getSystemService(Context.TELEPHONY_SERVICE)).getPhoneCount() <= 1))
+                    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
+                            ((TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE)).getPhoneCount() <= 1))
             {
                 //first delete all entries in saved data for this widgetId
                 WidgetAutoUpdateProvider.deleteEntryIfContained(this, appWidgetId);
 
                 // save the widget with its carrier
-                String carrier = ((TelephonyManager)
-                        getSystemService(Context.TELEPHONY_SERVICE)).getNetworkOperatorName();
+                String carrier = ((TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE))
+                        .getNetworkOperatorName();
 
                 if (carrier.equals("")) carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
 
                 WidgetAutoUpdateProvider.addEntry(this, appWidgetId, carrier);
 
-                new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.SILENT,
-                        carrier).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.SILENT, carrier)
+                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
                 finish();
             }
@@ -113,8 +114,8 @@ public class RequestPermissionActivity extends Activity
         List<SubscriptionInfo> supportedCarriers = new ArrayList<>();
         for (SubscriptionInfo userCarrier : subscriptionInfos)
         {
-            DataSupplier possibleDataSupplier = DataSupplier.getProviderDataSupplier(userCarrier
-                    .getCarrierName().toString());
+            DataSupplier possibleDataSupplier = DataSupplier
+                    .getProviderDataSupplier(userCarrier.getCarrierName().toString());
             if (possibleDataSupplier.isRealDataSupplier())
             {
                 supportedCarriers.add(userCarrier);
@@ -131,15 +132,15 @@ public class RequestPermissionActivity extends Activity
                 WidgetAutoUpdateProvider.deleteEntryIfContained(this, appWidgetId);
 
                 // save the widget with its carrier
-                String carrier = ((TelephonyManager)
-                        getSystemService(Context.TELEPHONY_SERVICE)).getNetworkOperatorName();
+                String carrier = ((TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE))
+                        .getNetworkOperatorName();
 
                 if (carrier.equals("")) carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
 
                 WidgetAutoUpdateProvider.addEntry(this, appWidgetId, carrier);
 
-                new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.SILENT,
-                        carrier).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.SILENT, carrier)
+                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
                 finish();
                 break;
@@ -147,8 +148,8 @@ public class RequestPermissionActivity extends Activity
                 //first delete all entries in saved data for this widgetId
                 WidgetAutoUpdateProvider.deleteEntryIfContained(this, appWidgetId);
 
-                WidgetAutoUpdateProvider.addEntry(this, appWidgetId, supportedCarriers.get(0)
-                        .getCarrierName().toString());
+                WidgetAutoUpdateProvider
+                        .addEntry(this, appWidgetId, supportedCarriers.get(0).getCarrierName().toString());
 
                 new UpdateWidgetTask(appWidgetId, this, UpdateWidgetTask.Mode.SILENT,
                         supportedCarriers.get(0).getCarrierName().toString())
@@ -171,30 +172,34 @@ public class RequestPermissionActivity extends Activity
                     arrayAdapter.add(subscriptionInfo.getCarrierName().toString());
                 }
 
-                requestCarrierDialog.setNegativeButton(getString(R.string.dialogue_cancel),
-                        new DialogInterface.OnClickListener() {
+                requestCarrierDialog
+                        .setNegativeButton(getString(R.string.dialogue_cancel), new DialogInterface.OnClickListener()
+                        {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which)
+                            {
+                                //first delete all entries in saved data for this widgetId
+                                WidgetAutoUpdateProvider.deleteEntryIfContained(RequestPermissionActivity
+                                        .this, appWidgetId);
+
+                                // save the widget with CARRIER_NOT_SELECTED
+                                WidgetAutoUpdateProvider.addEntry(RequestPermissionActivity.this, appWidgetId,
+                                        UpdateWidgetTask.CARRIER_NOT_SELECTED);
+
+                                new UpdateWidgetTask(appWidgetId, RequestPermissionActivity.this,
+                                        UpdateWidgetTask.Mode.SILENT, UpdateWidgetTask.CARRIER_NOT_SELECTED)
+                                        .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+
+                                dialog.dismiss();
+                                finish();
+                            }
+                        });
+
+                requestCarrierDialog.setAdapter(arrayAdapter, new DialogInterface.OnClickListener()
+                {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        //first delete all entries in saved data for this widgetId
-                        WidgetAutoUpdateProvider.deleteEntryIfContained(RequestPermissionActivity
-                                .this, appWidgetId);
-
-                        // save the widget with CARRIER_NOT_SELECTED
-                        WidgetAutoUpdateProvider.addEntry(RequestPermissionActivity.this, appWidgetId,
-                                UpdateWidgetTask.CARRIER_NOT_SELECTED);
-
-                        new UpdateWidgetTask(appWidgetId, RequestPermissionActivity.this,
-                                UpdateWidgetTask.Mode.SILENT, UpdateWidgetTask
-                                .CARRIER_NOT_SELECTED).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
-
-                        dialog.dismiss();
-                        finish();
-                    }
-                });
-
-                requestCarrierDialog.setAdapter(arrayAdapter, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
+                    public void onClick(DialogInterface dialog, int which)
+                    {
                         String selectedCarrier = arrayAdapter.getItem(which);
 
                         //first delete all entries in saved data for this widgetId
@@ -202,12 +207,10 @@ public class RequestPermissionActivity extends Activity
                                 .this, appWidgetId);
 
                         // save the widget with its carrier
-                        WidgetAutoUpdateProvider.addEntry(RequestPermissionActivity.this, appWidgetId,
-                                selectedCarrier);
+                        WidgetAutoUpdateProvider.addEntry(RequestPermissionActivity.this, appWidgetId, selectedCarrier);
 
-                        new UpdateWidgetTask(appWidgetId, RequestPermissionActivity.this,
-                                UpdateWidgetTask.Mode.REGULAR, selectedCarrier)
-                                .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                        new UpdateWidgetTask(appWidgetId, RequestPermissionActivity.this, UpdateWidgetTask.Mode.REGULAR,
+                                selectedCarrier).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
 
                         finish();
                     }

@@ -38,7 +38,8 @@ public class DataPassTileService extends TileService
         super.onCreate();
 
         // get potentially prior stored value from shared prefs
-        SharedPreferences sharedPref = getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_RESULT_DATA, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_RESULT_DATA,
+                Context.MODE_PRIVATE);
         trafficWastedPercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, -1);
     }
 
@@ -103,8 +104,8 @@ public class DataPassTileService extends TileService
             @Override
             protected DataSupplier.ReturnCode doInBackground(Void... voids)
             {
-                dataSupplier = DataSupplier.getProviderDataSupplier(((TelephonyManager)
-                        getSystemService(Context.TELEPHONY_SERVICE)).getNetworkOperatorName());
+                dataSupplier = DataSupplier.getProviderDataSupplier(
+                        ((TelephonyManager) getSystemService(Context.TELEPHONY_SERVICE)).getNetworkOperatorName());
 
                 // get the data live from the server
                 return dataSupplier.getData(getApplicationContext());
@@ -125,8 +126,8 @@ public class DataPassTileService extends TileService
                     }
 
                     // store value in shared prefs
-                    SharedPreferences sharedPref =
-                            getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_RESULT_DATA, Context.MODE_PRIVATE);
+                    SharedPreferences sharedPref = getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_RESULT_DATA,
+                            Context.MODE_PRIVATE);
                     sharedPref.edit().putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, trafficWastedPercentage)
                             .apply();
 
@@ -144,9 +145,8 @@ public class DataPassTileService extends TileService
                     else
                     {
                         // get the reason for no success and tell the user via a Toast
-                        NetworkInfo activeNetworkInfo =
-                                ((ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE))
-                                        .getActiveNetworkInfo();
+                        NetworkInfo activeNetworkInfo = ((ConnectivityManager) getSystemService(
+                                Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
                         if (activeNetworkInfo != null)
                         {
                             if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI)

@@ -23,8 +23,7 @@ import java.util.Set;
 public class WidgetAutoUpdateProvider extends AppWidgetProvider
 {
     @Override
-    public void onUpdate(final Context context, AppWidgetManager appWidgetManager,
-                         final int[] appWidgetIds)
+    public void onUpdate(final Context context, AppWidgetManager appWidgetManager, final int[] appWidgetIds)
     {
         for (int appWidgetId : appWidgetIds)
         {
@@ -37,7 +36,7 @@ public class WidgetAutoUpdateProvider extends AppWidgetProvider
             String oldCarrier = deleteEntryIfContained(context, appWidgetId);
 
             Set<String> toStoreIds = sharedPref.getStringSet(PreferenceKeys.
-                            SAVED_APP_IDS, new HashSet<String>());
+                    SAVED_APP_IDS, new HashSet<String>());
 
             TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.
                     TELEPHONY_SERVICE);
@@ -50,7 +49,7 @@ public class WidgetAutoUpdateProvider extends AppWidgetProvider
             // multi-sims
             if ((!alreadyContained || oldCarrier.equals(UpdateWidgetTask.CARRIER_NOT_SELECTED)) &&
                     (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP_MR1 ||
-                    (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && manager.getPhoneCount() > 1)))
+                            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && manager.getPhoneCount() > 1)))
             {
                 // The opening activity has to store the widgetId with the selected carrier
                 carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
@@ -82,42 +81,42 @@ public class WidgetAutoUpdateProvider extends AppWidgetProvider
             editor.putStringSet(PreferenceKeys.SAVED_APP_IDS, toStoreIds);
             editor.apply();
 
-            UpdateWidgetTask.Mode mode = alreadyContained ? UpdateWidgetTask.Mode.SILENT :
-                    UpdateWidgetTask.Mode.REGULAR;
+            UpdateWidgetTask.Mode mode = alreadyContained ? UpdateWidgetTask.Mode.SILENT
+                    : UpdateWidgetTask.Mode.REGULAR;
 
             new UpdateWidgetTask(appWidgetId, context, mode, carrier).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
     }
 
     /**
-     * Deletes all entries in the current widget list, where the toDeleteWidgetIds matches. Also
-     * returns the carrier of the deleted entry.
+     * Deletes all entries in the current widget list, where the toDeleteWidgetIds matches. Also returns the carrier of
+     * the deleted entry.
+     *
      * @param context
-     *          the context
+     *         the context
      * @param toDeleteWidgetId
-     *          the widgetId to delete
-     * @return
-     *          the carrier of the probably deleted widget, otherwise an empty String
+     *         the widgetId to delete
+     *
+     * @return the carrier of the probably deleted widget, otherwise an empty String
      */
     public static String deleteEntryIfContained(Context context, int toDeleteWidgetId)
     {
         Set<String> newWidgetIds = new HashSet<>();
         String oldCarrier = "";
-        SharedPreferences sharedPref = context.getSharedPreferences(PreferenceKeys
-                .PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = context
+                .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
 
-        Set<String> toStoreWidgetIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS, new
-                HashSet<String>());
+        Set<String> toStoreWidgetIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS, new HashSet<String>());
 
         for (String currentAppIdWithCarrier : toStoreWidgetIds)
         {
             if (Integer.valueOf(currentAppIdWithCarrier.substring(0, currentAppIdWithCarrier.
-                        indexOf(","))) == toDeleteWidgetId)
+                    indexOf(","))) == toDeleteWidgetId)
             {
-                oldCarrier = currentAppIdWithCarrier.substring(currentAppIdWithCarrier.indexOf(",")
-                        + 1);
+                oldCarrier = currentAppIdWithCarrier.substring(currentAppIdWithCarrier.indexOf(",") + 1);
             }
-            else {
+            else
+            {
                 newWidgetIds.add(currentAppIdWithCarrier);
             }
         }
@@ -131,20 +130,20 @@ public class WidgetAutoUpdateProvider extends AppWidgetProvider
 
     /**
      * Saves the new widget data in shared preferences.
+     *
      * @param context
-     *          the context
+     *         the context
      * @param appWidgetId
-     *          the id of this widget
+     *         the id of this widget
      * @param carrier
-     *          the carrier of this widget
+     *         the carrier of this widget
      */
     public static void addEntry(Context context, int appWidgetId, String carrier)
     {
-        SharedPreferences sharedPref = context.getSharedPreferences(PreferenceKeys
-                .PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
+        SharedPreferences sharedPref = context
+                .getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
 
-        Set<String> toStoreWidgetIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS, new
-                HashSet<String>());
+        Set<String> toStoreWidgetIds = sharedPref.getStringSet(PreferenceKeys.SAVED_APP_IDS, new HashSet<String>());
 
         // Add the one and only carrier to this widget
         toStoreWidgetIds.add(String.valueOf(appWidgetId) + "," + carrier);

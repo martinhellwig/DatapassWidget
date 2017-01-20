@@ -16,7 +16,8 @@ class DummyDataSupplier extends DataSupplier
     }
 
     @Override
-    public boolean isRealDataSupplier() {
+    public boolean isRealDataSupplier()
+    {
         return false;
     }
 

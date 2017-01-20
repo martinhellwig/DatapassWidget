@@ -19,9 +19,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_centerInParent="true"
-        android:gravity="center"
         android:alpha="0.7"
         android:fontFamily="sans-serif-light"
+        android:gravity="center"
         android:textColor="@android:color/secondary_text_light"
         android:textSize="10sp"
         tools:ignore="SmallSp" />

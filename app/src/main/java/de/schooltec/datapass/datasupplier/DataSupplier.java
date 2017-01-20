@@ -1,12 +1,6 @@
 package de.schooltec.datapass.datasupplier;
 
-import android.Manifest;
 import android.content.Context;
-import android.content.pm.PackageManager;
-import android.os.Build;
-import android.telephony.SubscriptionInfo;
-import android.telephony.SubscriptionManager;
-import android.telephony.TelephonyManager;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -22,8 +16,8 @@ import de.schooltec.datapass.UpdateWidgetTask;
 
 /**
  * Class providing a static function to check which provider/carrier the users phone uses and return the correct
- * concrete DataSupplier if available. This class also serves as the base class for every concrete DataSupplier.
- * Thus, it offers the method {@link #getData(Context)} to retrieve HTML content of a given website, whereas a concrete
+ * concrete DataSupplier if available. This class also serves as the base class for every concrete DataSupplier. Thus,
+ * it offers the method {@link #getData(Context)} to retrieve HTML content of a given website, whereas a concrete
  * DataSupplier has to extract the desired information from that data.
  *
  * @author Martin Hellwig
@@ -36,13 +30,14 @@ public abstract class DataSupplier
      * Finds the right parser for users carrier.
      *
      * @param selectedCarrier
-     *          the carrier for thhis widget
-     * @return
-     *          the right parser if available, DummyParser else
+     *         the carrier for thhis widget
+     *
+     * @return the right parser if available, DummyParser else
      */
     public static DataSupplier getProviderDataSupplier(String selectedCarrier)
     {
-        switch (selectedCarrier) {
+        switch (selectedCarrier)
+        {
             case "Telekom.de":
                 return new TelekomGermanyDataSupplier();
             case UpdateWidgetTask.CARRIER_NOT_SELECTED:
@@ -111,8 +106,8 @@ public abstract class DataSupplier
 
     /**
      * Says, if this data provider is a real supplier (not dummy or something else).
-     * @return
-     *      true, if this is a real data supplier
+     *
+     * @return true, if this is a real data supplier
      */
     public abstract boolean isRealDataSupplier();
 

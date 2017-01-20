@@ -17,7 +17,7 @@ public class WidgetIntentReceiver extends BroadcastReceiver
     public void onReceive(Context context, Intent intent)
     {
         new UpdateWidgetTask(intent.getIntExtra(UpdateWidgetTask.APP_WIDGET_ID, -1), context,
-                UpdateWidgetTask.Mode.REGULAR, intent.getStringExtra(UpdateWidgetTask
-                .APP_WIDGET_CARRIER)).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
+                UpdateWidgetTask.Mode.REGULAR, intent.getStringExtra(UpdateWidgetTask.APP_WIDGET_CARRIER))
+                .executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
     }
 }
