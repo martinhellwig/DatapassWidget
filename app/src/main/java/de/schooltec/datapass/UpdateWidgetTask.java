@@ -116,11 +116,13 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 arcColorId = R.color.arc_blue;
 
                 // Store values
-                editor.putString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, trafficProportion);
-                editor.putString(PreferenceKeys.SAVED_TRAFFIC_UNIT, trafficUnit);
-                editor.putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, trafficWastedPercentage);
-                editor.putString(PreferenceKeys.SAVED_LAST_UPDATE, lastUpdate);
-                editor.putString(PreferenceKeys.SAVED_HINT, hint);
+                editor.putString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION + carrier,
+                        trafficProportion);
+                editor.putString(PreferenceKeys.SAVED_TRAFFIC_UNIT + carrier, trafficUnit);
+                editor.putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE + carrier,
+                        trafficWastedPercentage);
+                editor.putString(PreferenceKeys.SAVED_LAST_UPDATE + carrier, lastUpdate);
+                editor.putString(PreferenceKeys.SAVED_HINT + carrier, hint);
                 editor.apply();
 
                 if (mode == Mode.REGULAR) Toast.makeText(context, R.string.update_successful, Toast.LENGTH_LONG).show();
@@ -136,11 +138,11 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 arcColorId = R.color.arc_orange;
 
                 // Store values
-                editor.putString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, trafficProportion);
-                editor.putString(PreferenceKeys.SAVED_TRAFFIC_UNIT, trafficUnit);
-                editor.putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, trafficWastedPercentage);
-                editor.putString(PreferenceKeys.SAVED_LAST_UPDATE, lastUpdate);
-                editor.putString(PreferenceKeys.SAVED_HINT, hint);
+                editor.putString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION + carrier, trafficProportion);
+                editor.putString(PreferenceKeys.SAVED_TRAFFIC_UNIT + carrier, trafficUnit);
+                editor.putInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE + carrier, trafficWastedPercentage);
+                editor.putString(PreferenceKeys.SAVED_LAST_UPDATE + carrier, lastUpdate);
+                editor.putString(PreferenceKeys.SAVED_HINT + carrier, hint);
                 editor.apply();
 
                 if (mode == Mode.REGULAR) Toast.makeText(context, R.string.update_wasted, Toast.LENGTH_LONG).show();
@@ -148,11 +150,13 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 break;
             case ERROR:
                 // Set the values to the views (when first started, use standard output, else load last entries)
-                trafficProportion = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION, "");
-                trafficUnit = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_UNIT, "");
-                trafficWastedPercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE, 0);
-                lastUpdate = sharedPref.getString(PreferenceKeys.SAVED_LAST_UPDATE, "");
-                hint = sharedPref.getString(PreferenceKeys.SAVED_HINT, "");
+                trafficProportion = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION +
+                        carrier, "");
+                trafficUnit = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_UNIT + carrier, "");
+                trafficWastedPercentage = sharedPref.getInt(PreferenceKeys
+                        .SAVED_TRAFFIC_WASTED_PERCENTAGE + carrier, 0);
+                lastUpdate = sharedPref.getString(PreferenceKeys.SAVED_LAST_UPDATE + carrier, "");
+                hint = sharedPref.getString(PreferenceKeys.SAVED_HINT + carrier, "");
 
                 arcColorId = R.color.arc_gray_dark;
 

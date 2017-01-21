@@ -2,6 +2,7 @@
     <string name="app_name">Datapass</string>
 
     <string name="parsable_volume_used_up">Inclusive volume with full speed used up.</string>
+    <string name="parsable_datapass_provider">Telekom</string>
 
     <string name="update_fail">Error while updating usage data</string>
     <string name="update_fail_wifi">Can\'t update data. Please turn off WiFi</string>

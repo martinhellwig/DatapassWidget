@@ -46,6 +46,13 @@ class TelekomGermanyDataSupplier extends DataSupplier
 
             if (htmlContent.contains(context.getString(R.string.parsable_volume_used_up))) return WASTED;
 
+            if ((isTelekomProvider() && !htmlContent.contains(context.getString(R.string
+                    .parsable_datapass_provider))) || (!isTelekomProvider() && htmlContent.contains(
+                    context.getString(R.string.parsable_datapass_provider))))
+            {
+               return ERROR;
+            }
+
             // First: get the two traffic relevant values
             Pattern pattern = Pattern.compile(TRAFFIC_REGEX);
             Matcher matcher = pattern.matcher(htmlContent);
@@ -135,5 +142,14 @@ class TelekomGermanyDataSupplier extends DataSupplier
     public String getLastUpdate()
     {
         return this.lastUpdate;
+    }
+
+    /**
+     * Can say, if the parser (or one of its subparser) is the real telekom-dataSupplier
+     * @return
+     *      true, if this parser is the real parser for german telekom
+     */
+    public boolean isTelekomProvider() {
+        return true;
     }
 }

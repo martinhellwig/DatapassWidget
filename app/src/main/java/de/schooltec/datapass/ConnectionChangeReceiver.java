@@ -21,7 +21,7 @@ import java.util.Set;
  */
 public class ConnectionChangeReceiver extends BroadcastReceiver
 {
-    private final static long MIN_TIME_BETWEEN_TWO_REQUESTS = 5000;
+    private final static long MIN_TIME_BETWEEN_TWO_REQUESTS = 15000;
 
     private static boolean alreadyRegistered;
     private static long lastChangeEventTimeStamp;

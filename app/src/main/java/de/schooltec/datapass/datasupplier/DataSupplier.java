@@ -40,6 +40,8 @@ public abstract class DataSupplier
         {
             case "Telekom.de":
                 return new TelekomGermanyDataSupplier();
+            case "congstar":
+                return new CongstarDataSupplier();
             case UpdateWidgetTask.CARRIER_NOT_SELECTED:
                 return new CarrierNotSelectedSupplier();
             default:
