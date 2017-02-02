@@ -8,6 +8,7 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.telephony.TelephonyManager;
 
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,70 +23,90 @@ import java.util.Set;
  */
 public class WidgetAutoUpdateProvider extends AppWidgetProvider
 {
+    public static final String LAST_UPDATE_TIMESTAMP = "last_update_timestamp";
+    public final static long MIN_TIME_BETWEEN_TWO_REQUESTS = 15000;
+
     @Override
     public void onUpdate(final Context context, AppWidgetManager appWidgetManager, final int[] appWidgetIds)
     {
         for (int appWidgetId : appWidgetIds)
         {
-            // delete the current widget from list if the widget was in the list, simply add it
-            // again afterwards with the same carrier again otherwise add the widget with the first
-            // carrier to find (or the identifier for requesting the user to select the carrier)
-            SharedPreferences sharedPref = context.getSharedPreferences(PreferenceKeys.
-                    PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
+            // Only go further, if the last update was long enough in the past
+            if (lastUpdateTimeoutOver(context, appWidgetId)) {
+                // delete the current widget from list if the widget was in the list, simply add it
+                // again afterwards with the same carrier again otherwise add the widget with the first
+                // carrier to find (or the identifier for requesting the user to select the carrier)
+                SharedPreferences sharedPref = context.getSharedPreferences(PreferenceKeys.
+                        PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
 
-            String oldCarrier = deleteEntryIfContained(context, appWidgetId);
+                String oldCarrier = deleteEntryIfContained(context, appWidgetId);
 
-            Set<String> toStoreIds = sharedPref.getStringSet(PreferenceKeys.
-                    SAVED_APP_IDS, new HashSet<String>());
+                Set<String> toStoreIds = sharedPref.getStringSet(PreferenceKeys.
+                        SAVED_APP_IDS, new HashSet<String>());
 
-            TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.
-                    TELEPHONY_SERVICE);
+                TelephonyManager manager = (TelephonyManager) context.getSystemService(Context.
+                        TELEPHONY_SERVICE);
 
-            boolean alreadyContained = oldCarrier != null && !oldCarrier.equals("");
-            String carrier;
+                boolean alreadyContained = oldCarrier != null && !oldCarrier.equals("");
+                String carrier;
 
-            // only ask, if device is API 22 or otherwise (API 23 and up), if there are more
-            // than two sims; All devices with API lower than API 22 are not good supported for
-            // multi-sims
-            if ((!alreadyContained || oldCarrier.equals(UpdateWidgetTask.CARRIER_NOT_SELECTED)) &&
-                    (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP_MR1 ||
-                            (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && manager.getPhoneCount() > 1)))
-            {
-                // The opening activity has to store the widgetId with the selected carrier
-                carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
-            }
-            else
-            {
-                // use the old set carrier for multi-sim widgets
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && manager.getPhoneCount() > 1)
-                {
-                    carrier = oldCarrier;
+                // only ask, if device is API 22 or otherwise (API 23 and up), if there are more
+                // than two sims; All devices with API lower than API 22 are not good supported for
+                // multi-sims
+                if ((!alreadyContained || oldCarrier.equals(UpdateWidgetTask.CARRIER_NOT_SELECTED)) &&
+                        (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP_MR1 ||
+                                (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && manager.getPhoneCount() > 1))) {
+                    // The opening activity has to store the widgetId with the selected carrier
+                    carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
+                } else {
+                    // use the old set carrier for multi-sim widgets
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && manager.getPhoneCount() > 1) {
+                        carrier = oldCarrier;
+                    } else {
+                        // if the carrier of the phone has changed (or there is no carrier, because in
+                        // flight mode), use the new one, otherwise use the old one
+                        carrier = manager.getNetworkOperatorName();
+                        if (carrier == null || carrier.isEmpty()) carrier = oldCarrier;
+                    }
                 }
-                else
-                {
-                    // if the carrier of the phone has changed (or there is no carrier, because in
-                    // flight mode), use the new one, otherwise use the old one
-                    carrier = manager.getNetworkOperatorName();
-                    if (carrier == null || carrier.isEmpty()) carrier = oldCarrier;
-                }
+
+                // If there is no carrier (because in flight mode and there also was no stored
+                // oldCarrier), use the CARRIER_NOT_SELECTED
+                if ("".equals(carrier)) carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
+
+                // Add the one and only carrier to this widget
+                toStoreIds.add(String.valueOf(appWidgetId) + "," + carrier);
+
+                SharedPreferences.Editor editor = sharedPref.edit();
+                editor.putStringSet(PreferenceKeys.SAVED_APP_IDS, toStoreIds);
+                editor.apply();
+
+                UpdateWidgetTask.Mode mode = alreadyContained ? UpdateWidgetTask.Mode.SILENT
+                        : UpdateWidgetTask.Mode.REGULAR;
+
+                new UpdateWidgetTask(appWidgetId, context, mode, carrier).executeOnExecutor(AsyncTask
+                        .THREAD_POOL_EXECUTOR);
             }
-
-            // If there is no carrier (because in flight mode and there also was no stored
-            // oldCarrier), use the CARRIER_NOT_SELECTED
-            if ("".equals(carrier)) carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED;
-
-            // Add the one and only carrier to this widget
-            toStoreIds.add(String.valueOf(appWidgetId) + "," + carrier);
-
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putStringSet(PreferenceKeys.SAVED_APP_IDS, toStoreIds);
-            editor.apply();
-
-            UpdateWidgetTask.Mode mode = alreadyContained ? UpdateWidgetTask.Mode.SILENT
-                    : UpdateWidgetTask.Mode.REGULAR;
-
-            new UpdateWidgetTask(appWidgetId, context, mode, carrier).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR);
         }
+    }
+
+    /**
+     * Says, if the time of last update of the given widget is more than the current time plus the
+     * specified timeout apart. This method does not set the new time to the given widget.
+     * @param context
+     *          the context, needed for sharedPrefs
+     * @param appWidgetId
+     *          the appWidgetId to proof
+     * @return
+     *          true, if the last update was long ago or this appWidgetId is completely new
+     */
+    public static boolean lastUpdateTimeoutOver(Context context, int appWidgetId)
+    {
+        SharedPreferences sharedPref = context.getSharedPreferences(PreferenceKeys.
+                PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
+
+        long lastUpdate = sharedPref.getLong(LAST_UPDATE_TIMESTAMP + appWidgetId, 0);
+        return lastUpdate + MIN_TIME_BETWEEN_TWO_REQUESTS < (new Date().getTime());
     }
 
     /**

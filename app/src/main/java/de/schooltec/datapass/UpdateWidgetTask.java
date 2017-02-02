@@ -14,14 +14,18 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.view.animation.Interpolator;
 import android.view.animation.OvershootInterpolator;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
+import java.util.Date;
+
 import de.schooltec.datapass.datasupplier.DataSupplier;
 
+import static de.schooltec.datapass.WidgetAutoUpdateProvider.LAST_UPDATE_TIMESTAMP;
 import static de.schooltec.datapass.datasupplier.DataSupplier.ReturnCode;
 
 /**
@@ -61,6 +65,9 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     private boolean loadingFinished = false;
     private boolean drawingInProgress = false;
 
+    private String firstCarrier;
+    private NetworkInfo networkInfoAtTastStarted;
+
     /**
      * Constructor.
      *
@@ -80,11 +87,22 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         this.carrier = selectedCarrier;
         this.context = context;
         this.mode = mode;
+
+        // set the updateTimestamp for this appWidgetId
+        sharedPref = context.getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
+        sharedPref.edit().putLong(LAST_UPDATE_TIMESTAMP + appWidgetId, (new Date()).getTime()).apply();
+
+        // Find out some things about networkinfo while starting the animation
+        // If would do this while or end of animation the networkstate could be a different than to
+        // the start of the animation --> inconsistent state
+        firstCarrier = ((TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE))
+                .getNetworkOperatorName();
+        networkInfoAtTastStarted = ((ConnectivityManager) context.getSystemService(Context
+                .CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
+
         dataSupplier = DataSupplier.getProviderDataSupplier(selectedCarrier);
 
         ConnectionChangeReceiver.registerReceiver(context);
-
-        sharedPref = context.getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_RESULT_DATA, Context.MODE_PRIVATE);
 
         // Start loading animation
         if (mode != Mode.ULTRA_SILENT)
@@ -161,12 +179,9 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 arcColorId = R.color.arc_gray_dark;
 
                 // Generate Toasts for user feedback if update failed
-                NetworkInfo activeNetworkInfo = ((ConnectivityManager) context
-                        .getSystemService(Context.CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
-
-                if (activeNetworkInfo != null)
+                if (networkInfoAtTastStarted != null)
                 {
-                    if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI)
+                    if (networkInfoAtTastStarted.getType() == ConnectivityManager.TYPE_WIFI)
                     {
                         // Connected to WiFi
                         if (mode == Mode.REGULAR)
@@ -176,7 +191,7 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                         if (sharedPref.getAll().isEmpty()) hint = context.getString(R.string.hint_turn_off_wifi);
                         break;
                     }
-                    else if (activeNetworkInfo.getType() == ConnectivityManager.TYPE_MOBILE)
+                    else if (networkInfoAtTastStarted.getType() == ConnectivityManager.TYPE_MOBILE)
                     {
                         // Connected to Mobile Data but update fails nevertheless
                         if (mode == Mode.REGULAR)
@@ -209,9 +224,6 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
                 break;
             case CARRIER_NOT_SELECTED:
-                String firstCarrier = ((TelephonyManager) context.getSystemService(Context.TELEPHONY_SERVICE))
-                        .getNetworkOperatorName();
-
                 trafficProportion = "";
                 trafficUnit = "";
                 trafficWastedPercentage = 0;
