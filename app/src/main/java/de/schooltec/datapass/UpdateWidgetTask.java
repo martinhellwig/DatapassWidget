@@ -21,11 +21,12 @@ import android.view.animation.OvershootInterpolator;
 import android.widget.RemoteViews;
 import android.widget.Toast;
 
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import de.schooltec.datapass.datasupplier.DataSupplier;
 
-import static de.schooltec.datapass.WidgetAutoUpdateProvider.LAST_UPDATE_TIMESTAMP;
 import static de.schooltec.datapass.datasupplier.DataSupplier.ReturnCode;
 
 /**
@@ -90,7 +91,7 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
 
         // set the updateTimestamp for this appWidgetId
         sharedPref = context.getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_MISC, Context.MODE_PRIVATE);
-        sharedPref.edit().putLong(LAST_UPDATE_TIMESTAMP + appWidgetId, (new Date()).getTime()).apply();
+        sharedPref.edit().putLong(AppWidgetIdUtil.LAST_UPDATE_TIMESTAMP + appWidgetId, (new Date()).getTime()).apply();
 
         // Find out some things about networkinfo while starting the animation
         // If would do this while or end of animation the networkstate could be a different than to
@@ -100,9 +101,9 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         networkInfoAtTastStarted = ((ConnectivityManager) context.getSystemService(Context
                 .CONNECTIVITY_SERVICE)).getActiveNetworkInfo();
 
-        dataSupplier = DataSupplier.getProviderDataSupplier(selectedCarrier);
+        dataSupplier = DataSupplier.Companion.getProviderDataSupplier(selectedCarrier);
 
-        ConnectionChangeReceiver.registerReceiver(context);
+        ConnectionChangeReceiver.Companion.registerReceiver(context);
 
         // Start loading animation
         if (mode != Mode.ULTRA_SILENT)
@@ -114,7 +115,7 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
     @Override
     protected ReturnCode doInBackground(Void... params)
     {
-        return dataSupplier.getData(context);
+        return dataSupplier.fetchData(context);
     }
 
     @Override
@@ -125,10 +126,12 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
         switch (returnCode)
         {
             case SUCCESS:
-                trafficProportion = dataSupplier.getTrafficWasted() + "/" + dataSupplier.getTrafficAvailable();
+                trafficProportion = dataSupplier.getTrafficWastedFormatted() + "/" + dataSupplier.getTrafficAvailableFormatted();
                 trafficUnit = dataSupplier.getTrafficUnit();
                 trafficWastedPercentage = dataSupplier.getTrafficWastedPercentage();
-                lastUpdate = dataSupplier.getLastUpdate();
+
+                SimpleDateFormat outputDate = new SimpleDateFormat("dd.MM. - HH:mm", Locale.GERMAN);
+                lastUpdate = outputDate.format(dataSupplier.getLastUpdate());
                 hint = "";
 
                 arcColorId = R.color.arc_blue;
@@ -171,8 +174,7 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                 trafficProportion = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_PROPORTION +
                         carrier, "");
                 trafficUnit = sharedPref.getString(PreferenceKeys.SAVED_TRAFFIC_UNIT + carrier, "");
-                trafficWastedPercentage = sharedPref.getInt(PreferenceKeys
-                        .SAVED_TRAFFIC_WASTED_PERCENTAGE + carrier, 0);
+                trafficWastedPercentage = sharedPref.getInt(PreferenceKeys.SAVED_TRAFFIC_WASTED_PERCENTAGE + carrier, 0);
                 lastUpdate = sharedPref.getString(PreferenceKeys.SAVED_LAST_UPDATE + carrier, "");
                 hint = sharedPref.getString(PreferenceKeys.SAVED_HINT + carrier, "");
 
@@ -296,6 +298,8 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
             // use the first appWidgetId for the requestCode to distinguish between multiple
             // simultaneous WidgetUpdates. If the requestCode will be the same, the clickEvent will
             // only trigger one of the placed widgets
+
+            Log.i("Blaa", "Set click listener");
             Intent intent = new Intent(context, WidgetIntentReceiver.class);
             intent.putExtra(APP_WIDGET_ID, appWidgetId);
             intent.putExtra(APP_WIDGET_CARRIER, carrier);
@@ -312,6 +316,7 @@ public class UpdateWidgetTask extends AsyncTask<Void, Void, ReturnCode>
                     {
                         Intent intent = new Intent(UpdateWidgetTask.this.context, RequestPermissionActivity.class);
                         intent.putExtra(APP_WIDGET_ID, UpdateWidgetTask.this.appWidgetId);
+                        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
                         UpdateWidgetTask.this.context.startActivity(intent);
                     }
                 }, 500);
