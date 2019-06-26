@@ -1,5 +1,6 @@
 package de.schooltec.datapass
 
+import android.appwidget.AppWidgetManager
 import android.content.Context
 import java.util.*
 
@@ -49,8 +50,7 @@ object AppWidgetIdUtil {
             val widgetId = Integer.valueOf(it.substring(0, it.indexOf(",")))
             if (widgetId == toDeleteWidgetId) {
                 oldCarrier = it.substring(it.indexOf(",") + 1)
-            }
-            else {
+            } else {
                 newToStoreWidgetIds.add(it)
             }
         }
@@ -73,6 +73,44 @@ object AppWidgetIdUtil {
         }
 
         return null
+    }
+
+    fun getAllStoredAppWidgetIds(context: Context): MutableSet<String> {
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val appWidgetProvider = appWidgetManager.installedProviders.find {
+            it.provider.shortClassName.contains(WidgetAutoUpdateProvider::class.java.simpleName.toString())
+        }
+        val realAppWidgetIds = appWidgetProvider?.let {
+            appWidgetManager.getAppWidgetIds(it.provider)
+        } ?: IntArray(0)
+        val sharedPref = context.getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_MISC, Context.MODE_PRIVATE)
+
+        val currentlyStoredAppIds = sharedPref.getStringSet(
+            PreferenceKeys.SAVED_APP_IDS,
+            HashSet()
+        ) ?: HashSet()
+
+        currentlyStoredAppIds.forEach { storedAppWidgetIdPlusCarrier ->
+            var isRealAppWidgetId = false
+            realAppWidgetIds.forEach {
+                if (storedAppWidgetIdPlusCarrier.contains(it.toString())) isRealAppWidgetId = true
+            }
+
+            if (!isRealAppWidgetId) {
+                val widgetId = Integer.valueOf(
+                    storedAppWidgetIdPlusCarrier.substring(
+                        0,
+                        storedAppWidgetIdPlusCarrier.indexOf(",")
+                    )
+                )
+                deleteEntryIfContained(context, widgetId)
+            }
+        }
+
+        return sharedPref.getStringSet(
+            PreferenceKeys.SAVED_APP_IDS,
+            HashSet()
+        ) ?: HashSet()
     }
 
     /**

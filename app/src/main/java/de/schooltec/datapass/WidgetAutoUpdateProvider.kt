@@ -11,7 +11,6 @@ import de.schooltec.datapass.AppWidgetIdUtil.deleteEntryIfContained
 import de.schooltec.datapass.AppWidgetIdUtil.getCarrierForGivenAppWidgetId
 import de.schooltec.datapass.AppWidgetIdUtil.lastUpdateTimeoutOver
 
-import java.util.HashSet
 
 /**
  * AppWidgetProvider which automatically gets called due to "ACTION_APPWIDGET_UPDATE" (see Manifest).
@@ -25,14 +24,12 @@ import java.util.HashSet
 class WidgetAutoUpdateProvider : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        val sharedPreferences = context.getSharedPreferences(PreferenceKeys.PREFERENCE_FILE_MISC, Context.MODE_PRIVATE)
-
         appWidgetIds.forEach { appWidgetId ->
             // Only go further, if the last update was long enough in the past
             if (!lastUpdateTimeoutOver(context, appWidgetId)) return@forEach
 
-            val oldWidgetIds = sharedPreferences.getStringSet(PreferenceKeys.SAVED_APP_IDS, HashSet())
-            val alreadyContained = oldWidgetIds?.any { it.contains(appWidgetId.toString()) } ?: false
+            val oldWidgetIds = AppWidgetIdUtil.getAllStoredAppWidgetIds(context)
+            val alreadyContained = oldWidgetIds.any { it.contains(appWidgetId.toString()) }
             val carrierOfAlreadyContainedWidgetId = getCarrierForGivenAppWidgetId(context, appWidgetId)
 
             if (alreadyContained && carrierOfAlreadyContainedWidgetId != null) {
@@ -47,15 +44,13 @@ class WidgetAutoUpdateProvider : AppWidgetProvider() {
         val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
         var toUseCarrier =
-            // Only ask, if device is API 22 or otherwise (API 23 and up), if there are more than two sims
+        // Only ask, if device is API 22 or otherwise (API 23 and up), if there are more than two sims
             // All devices with API lower than API 22 are not good supported for multi-sims
             if (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP_MR1 ||
-                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && telephonyManager.phoneCount > 1)
-            {
+                Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && telephonyManager.phoneCount > 1
+            ) {
                 UpdateWidgetTask.CARRIER_NOT_SELECTED
-            }
-            else
-            {
+            } else {
                 // If the carrier of the phone has changed (or there is no carrier, because in
                 // flight mode), use the new one, otherwise use the old one
                 telephonyManager.networkOperatorName
@@ -63,7 +58,7 @@ class WidgetAutoUpdateProvider : AppWidgetProvider() {
         if (toUseCarrier == null || toUseCarrier.isEmpty()) toUseCarrier = UpdateWidgetTask.CARRIER_NOT_SELECTED
 
         addEntry(context, appWidgetId, toUseCarrier)
-        UpdateWidgetTask(appWidgetId, context, UpdateWidgetTask.Mode.REGULAR, toUseCarrier).executeOnExecutor(
+        UpdateWidgetTask(appWidgetId, context, UpdateMode.REGULAR, toUseCarrier).executeOnExecutor(
             AsyncTask.THREAD_POOL_EXECUTOR
         )
     }
@@ -72,15 +67,13 @@ class WidgetAutoUpdateProvider : AppWidgetProvider() {
         val telephonyManager = context.getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
         var toUseCarrier =
-            // Only ask, if device is API 22 or otherwise (API 23 and up), if there are more than two sims
+        // Only ask, if device is API 22 or otherwise (API 23 and up), if there are more than two sims
             // All devices with API lower than API 22 are not good supported for multi-sims
             if (carrier == UpdateWidgetTask.CARRIER_NOT_SELECTED &&
-                (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP_MR1 || Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && telephonyManager.phoneCount > 1))
-            {
+                (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP_MR1 || Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && telephonyManager.phoneCount > 1)
+            ) {
                 UpdateWidgetTask.CARRIER_NOT_SELECTED
-            }
-            else
-            {
+            } else {
                 // If the carrier of the phone has changed (or there is no carrier, because in
                 // flight mode), use the new one, otherwise use the old one
                 var possibleCarrier = telephonyManager.networkOperatorName
@@ -89,7 +82,7 @@ class WidgetAutoUpdateProvider : AppWidgetProvider() {
             }
         if (toUseCarrier.isEmpty()) toUseCarrier = UpdateWidgetTask.CARRIER_NOT_SELECTED
 
-        UpdateWidgetTask(appWidgetId, context, UpdateWidgetTask.Mode.SILENT, toUseCarrier).executeOnExecutor(
+        UpdateWidgetTask(appWidgetId, context, UpdateMode.SILENT, toUseCarrier).executeOnExecutor(
             AsyncTask.THREAD_POOL_EXECUTOR
         )
     }

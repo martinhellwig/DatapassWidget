@@ -27,9 +27,9 @@ class RequestPermissionActivity : Activity() {
         telephonyManager = getSystemService(Context.TELEPHONY_SERVICE) as TelephonyManager
 
         requestWindowFeature(Window.FEATURE_NO_TITLE)
-        if (!intent.hasExtra(UpdateWidgetTask.APP_WIDGET_ID)) return
+        if (!intent.hasExtra(UpdateWidgetTask.IDENTIFIER_APP_WIDGET_ID)) return
 
-        appWidgetId = intent.getIntExtra(UpdateWidgetTask.APP_WIDGET_ID, -1)
+        appWidgetId = intent.getIntExtra(UpdateWidgetTask.IDENTIFIER_APP_WIDGET_ID, -1)
         if (isSingleSim()) {
             handleSingleSimNewWidget()
         } else {
@@ -57,15 +57,13 @@ class RequestPermissionActivity : Activity() {
         }
     }
 
-    private fun handleSingleSimNewWidget()
-    {
+    private fun handleSingleSimNewWidget() {
         var carrier = telephonyManager.networkOperatorName
         if (carrier.isEmpty()) carrier = UpdateWidgetTask.CARRIER_NOT_SELECTED
         handleGivenCarrier(carrier)
     }
 
-    private fun handleGivenCarrier(carrier: String)
-    {
+    private fun handleGivenCarrier(carrier: String) {
         // Delete possible entry and add new one
         AppWidgetIdUtil.deleteEntryIfContained(this, appWidgetId)
         AppWidgetIdUtil.addEntry(this, appWidgetId, carrier)
@@ -73,7 +71,7 @@ class RequestPermissionActivity : Activity() {
         UpdateWidgetTask(
             appWidgetId,
             this,
-            UpdateWidgetTask.Mode.SILENT,
+            UpdateMode.SILENT,
             carrier
         ).executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR)
 
@@ -131,8 +129,7 @@ class RequestPermissionActivity : Activity() {
         }
     }
 
-    private companion object
-    {
+    private companion object {
         const val REQUEST_PHONE_STATE_PERMISSION_CODE = 234
     }
 }
