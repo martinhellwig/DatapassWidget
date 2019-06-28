@@ -10,6 +10,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.wifi.WifiManager
+import kotlin.concurrent.thread
 
 
 /**
@@ -32,23 +33,26 @@ class NetworkChangeService : JobService() {
         return Service.START_NOT_STICKY
     }
 
-
     override fun onStartJob(params: JobParameters): Boolean {
         alreadyRegistered = true
-        connectivityReceiver?.let {
-            val intentFilter = IntentFilter()
-            @Suppress("DEPRECATION")
-            intentFilter.addAction(WifiManager.SUPPLICANT_CONNECTION_CHANGE_ACTION)
-            intentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE")
-            registerReceiver(it, intentFilter)
+        thread {
+            connectivityReceiver?.let {
+                val intentFilter = IntentFilter()
+                @Suppress("DEPRECATION")
+                intentFilter.addAction(WifiManager.SUPPLICANT_CONNECTION_CHANGE_ACTION)
+                intentFilter.addAction("android.net.conn.CONNECTIVITY_CHANGE")
+                registerReceiver(it, intentFilter)
+            }
         }
         return true
     }
 
     override fun onStopJob(params: JobParameters): Boolean {
         alreadyRegistered = false
-        connectivityReceiver?.let {
-            unregisterReceiver(it)
+        thread {
+            connectivityReceiver?.let {
+                unregisterReceiver(it)
+            }
         }
         return true
     }
@@ -79,8 +83,6 @@ class NetworkChangeService : JobService() {
 
                 val jobScheduler = appContext.getSystemService(Context.JOB_SCHEDULER_SERVICE) as JobScheduler
                 jobScheduler.schedule(connectionChangeJob)
-                val startServiceIntent = Intent(appContext, NetworkChangeService::class.java)
-                appContext.startService(startServiceIntent)
 
             } catch (exception: Exception) {
             }
