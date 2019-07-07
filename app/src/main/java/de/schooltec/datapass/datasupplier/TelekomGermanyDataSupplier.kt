@@ -54,9 +54,11 @@ internal open class TelekomGermanyDataSupplier : DataSupplier {
                 return ERROR
             }
 
+            val trafficText = htmlContent.substringAfterLast("div class=\"barTextBelow").substringBefore("</div>")
+
             // First: get the two traffic relevant values
             var pattern = Pattern.compile(TRAFFIC_REGEX)
-            var matcher = pattern.matcher(htmlContent)
+            var matcher = pattern.matcher(trafficText)
 
             var trafficWastedRaw = arrayOfNulls<String>(0)
             var trafficAvailableRaw = arrayOfNulls<String>(0)
