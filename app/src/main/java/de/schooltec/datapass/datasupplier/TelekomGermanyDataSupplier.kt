@@ -21,16 +21,16 @@ import java.util.*
  */
 internal open class TelekomGermanyDataSupplier : DataSupplier {
 
-    private var trafficWastedInternal = 0L
     private var trafficAvailableInternal = 0L
+    private var trafficTotalInternal = 0L
     private var lastUpdateInternal = Date(0)
 
     override val isRealDataSupplier = true
     override val trafficWasted: Long
-        get() = trafficWastedInternal
+        get() = trafficTotalInternal - trafficAvailableInternal
 
     override val trafficAvailable: Long
-        get() = trafficAvailableInternal
+        get() = trafficTotalInternal
 
     override val lastUpdate: Date
         get() = lastUpdateInternal
@@ -54,46 +54,49 @@ internal open class TelekomGermanyDataSupplier : DataSupplier {
                 return ERROR
             }
 
-            val trafficText = htmlContent.substringAfterLast("div class=\"barTextBelow").substringBefore("</div>")
+            val trafficText = htmlContent.substringAfter("div class=\"volume fit-text-to-container").substringBefore("</div>")
 
-            // First: get the two traffic relevant values
-            var pattern = Pattern.compile(TRAFFIC_REGEX)
+            // Get the relevant values
+            var trafficAvailable: String? = null
+            var trafficTotal: String? = null
+            val trafficUnit: String
+
+            var pattern = Pattern.compile(AMOUNT_REGEX)
             var matcher = pattern.matcher(trafficText)
-
-            var trafficWastedRaw = arrayOfNulls<String>(0)
-            var trafficAvailableRaw = arrayOfNulls<String>(0)
 
             var i = 0
             while (matcher.find()) {
-                if (i == 0) trafficWastedRaw =
-                    matcher.group(1).trim { it <= ' ' }.split("\\s".toRegex()).dropLastWhile { it.isEmpty() }
-                        .toTypedArray()
-                if (i == 1) trafficAvailableRaw =
-                    matcher.group(1).trim { it <= ' ' }.split("\\s".toRegex()).dropLastWhile { it.isEmpty() }
-                        .toTypedArray()
+                if (i == 0) trafficAvailable = matcher.group(1).trim()
+                if (i == 1) trafficTotal = matcher.group(1).trim()
                 i++
             }
 
-            // Parse results
-            val trafficWastedInFormat = trafficWastedRaw[0]?.replace(".", "")?.replace(",", ".")?.toFloat() ?: 0F
-            val trafficAvailableInFormat = trafficAvailableRaw[0]?.replace(".", "")?.replace(",", ".")?.toFloat() ?: 0F
-            val trafficWastedUnit = trafficWastedRaw[1]
-            val trafficAvailableUnit = trafficAvailableRaw[1] ?: ""
-
-            trafficWastedInternal = when(trafficWastedUnit)
-            {
-                "GB" -> (trafficWastedInFormat * 1024F * 1024F * 1024F).toLong()
-                "MB" -> (trafficWastedInFormat * 1024F * 1024F).toLong()
-                "kB" -> (trafficWastedInFormat * 1024F).toLong()
-                else -> trafficWastedInFormat.toLong()
+            pattern = Pattern.compile(TRAFFIC_REGEX)
+            matcher = pattern.matcher(trafficText)
+            trafficUnit = if (matcher.find()) {
+                matcher.group(1).trim()
+            } else {
+                ""
             }
 
-            trafficAvailableInternal = when(trafficAvailableUnit)
+            // Parse results
+            val trafficAvailableInFormat = trafficAvailable?.replace(".", "")?.replace(",", ".")?.toFloat() ?: 0F
+            val trafficTotalInFormat = trafficTotal?.replace(".", "")?.replace(",", ".")?.toFloat() ?: 0F
+
+            trafficAvailableInternal = when(trafficUnit)
             {
                 "GB" -> (trafficAvailableInFormat * 1024F * 1024F * 1024F).toLong()
                 "MB" -> (trafficAvailableInFormat * 1024F * 1024F).toLong()
                 "kB" -> (trafficAvailableInFormat * 1024F).toLong()
                 else -> trafficAvailableInFormat.toLong()
+            }
+
+            trafficTotalInternal = when(trafficUnit)
+            {
+                "GB" -> (trafficTotalInFormat * 1024F * 1024F * 1024F).toLong()
+                "MB" -> (trafficTotalInFormat * 1024F * 1024F).toLong()
+                "kB" -> (trafficTotalInFormat * 1024F).toLong()
+                else -> trafficTotalInFormat.toLong()
             }
 
             // Second: get the date of last update
@@ -114,7 +117,8 @@ internal open class TelekomGermanyDataSupplier : DataSupplier {
 
     companion object {
         private const val URL = "https://datapass.de/"
-        private const val TRAFFIC_REGEX = "(\\d{0,1}\\.?\\d{1,3},?\\d{0,4}.(GB|MB|kB))"
+        private const val AMOUNT_REGEX = "(\\d{0,2},?\\d{1,3})"
+        private const val TRAFFIC_REGEX = "(GB|MB|kB)"
         private const val LAST_UPDATE_REGEX = "(\\d{2}\\.\\d{2}\\.\\d{4}.{4}\\d{2}:\\d{2})"
     }
 }
