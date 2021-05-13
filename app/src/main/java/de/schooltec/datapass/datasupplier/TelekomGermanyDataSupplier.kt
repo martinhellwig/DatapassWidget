@@ -88,7 +88,7 @@ internal open class TelekomGermanyDataSupplier : DataSupplier {
                 "GB" -> (trafficAvailableInFormat * 1024F * 1024F * 1024F).toLong()
                 "MB" -> (trafficAvailableInFormat * 1024F * 1024F).toLong()
                 "kB" -> (trafficAvailableInFormat * 1024F).toLong()
-                else -> trafficAvailableInFormat.toLong()
+                else -> return ERROR
             }
 
             trafficTotalInternal = when(trafficUnit)
@@ -96,7 +96,7 @@ internal open class TelekomGermanyDataSupplier : DataSupplier {
                 "GB" -> (trafficTotalInFormat * 1024F * 1024F * 1024F).toLong()
                 "MB" -> (trafficTotalInFormat * 1024F * 1024F).toLong()
                 "kB" -> (trafficTotalInFormat * 1024F).toLong()
-                else -> trafficTotalInFormat.toLong()
+                else -> return ERROR
             }
 
             // Second: get the date of last update
